@@ -520,7 +520,7 @@ button{border-radius:4px}
       </div>
       <div class="coupon-form-grid">
         <div class="form-group"><label>عنوان الإشعار *</label><input type="text" id="pn_title" maxlength="60" placeholder="عطور فخمة بانتظارك 🌿"></div>
-        <div class="form-group"><label>الرابط عند الضغط</label><input type="text" id="pn_url" value="/perfumes.html" dir="ltr"></div>
+        <div class="form-group"><label>الرابط عند الضغط</label><input type="text" id="pn_url" value="/shop.html" dir="ltr"></div>
         <div class="form-group" style="grid-column:1/-1"><label>نص الرسالة *</label><textarea id="pn_body" maxlength="180" placeholder="اكتب رسالتك للزبائن..."></textarea></div>
         <div class="form-group"><label>وقت الإرسال</label>
           <select id="pn_mode" onchange="document.getElementById('pn_when').style.display=this.value==='schedule'?'block':'none'">
@@ -721,10 +721,10 @@ button{border-radius:4px}
 <script src="perfumes-data.js"></script>
 <script src="supabase-config.js"></script>
 <script>
-const STORAGE_KEY    = 'diraz_perfumes';
-const ORDERS_KEY     = 'diraz_orders';
-const COUPONS_KEY    = 'diraz_coupons';
-const WA_NUM         = '9647747474014';
+const STORAGE_KEY    = 'orris_perfumes';
+const ORDERS_KEY     = 'orris_orders';
+const COUPONS_KEY    = 'orris_coupons';
+const WA_NUM         = '';
 let   currentFilter  = 'all';
 
 // ══ Auth (Supabase Auth: إيميل + كلمة سر) ══
@@ -739,9 +739,9 @@ async function checkPass(){
   if(!email || !pass){ showLockError('❗ أدخل الإيميل وكلمة السر'); return; }
   var btn = document.getElementById('loginBtn'); btn.disabled = true;
   try{
-    try{ await DirazCloud.signIn(email, pass); }
+    try{ await OrrisCloud.signIn(email, pass); }
     catch(e){
-      DirazCloud.signOut();
+      OrrisCloud.signOut();
       var m = String((e && e.message) || e);
       var msg = /confirm/i.test(m) ? '❌ الإيميل غير مؤكد — فعّل Auto Confirm للمستخدم في Supabase'
               : /invalid/i.test(m) ? '❌ الإيميل أو كلمة السر غلط، أو الحساب غير موجود في Supabase'
@@ -750,9 +750,9 @@ async function checkPass(){
       showLockError(msg); return;
     }
     var ok;
-    try{ ok = await DirazCloud.rpc('am_i_admin'); }
-    catch(e){ DirazCloud.signOut(); showLockError('❌ الدخول نجح لكن دالة am_i_admin غير موجودة — شغّل supabase-security.sql في Supabase'); return; }
-    if(ok !== true){ DirazCloud.signOut(); showLockError('❌ هذا الحساب ليس حساب أدمن (الإيميل ما يطابق is_admin في SQL)'); return; }
+    try{ ok = await OrrisCloud.rpc('am_i_admin'); }
+    catch(e){ OrrisCloud.signOut(); showLockError('❌ الدخول نجح لكن دالة am_i_admin غير موجودة — شغّل supabase-security.sql في Supabase'); return; }
+    if(ok !== true){ OrrisCloud.signOut(); showLockError('❌ هذا الحساب ليس حساب أدمن (الإيميل ما يطابق is_admin في SQL)'); return; }
     enterPanel();
   }finally{
     btn.disabled = false;
@@ -765,9 +765,9 @@ function enterPanel(){
   initAll();
 }
 function logout(){
-  DirazCloud.signOut();
+  OrrisCloud.signOut();
   // امسح نسخة بيانات الزبائن من هذا المتصفح
-  [ORDERS_KEY, COUPONS_KEY, 'diraz_customers'].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+  [ORDERS_KEY, COUPONS_KEY, 'orris_customers'].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
   document.getElementById('lockScreen').style.display = 'flex';
   document.getElementById('adminPanel').style.display = 'none';
   document.getElementById('passInput').value = '';
@@ -780,7 +780,7 @@ function cloudFail(e){
 // تحديث البيانات من السيرفر (حتى التلفون والحاسبة يشوفون نفس الشي)
 var _refreshing = false;
 function refreshFromCloud(){
-  if(_refreshing || !DirazCloud.hasSession()) return;
+  if(_refreshing || !OrrisCloud.hasSession()) return;
   var panel = document.getElementById('adminPanel');
   if(!panel || panel.style.display === 'none') return;
   _refreshing = true;
@@ -802,12 +802,12 @@ function initAll(){ try{ spStart(); }catch(e){} try{ rvLoad(); setInterval(rvLoa
 }
 
 // ══ مزامنة الطلبات والزبائن والكوبونات مع Supabase ══
-var MIGRATED_KEY = 'diraz_admin_migrated_v1';
+var MIGRATED_KEY = 'orris_admin_migrated_v1';
 async function fetchAllRows(){
   var r = await Promise.all([
-    DirazCloud.list('orders'),
-    DirazCloud.list('customers'),
-    DirazCloud.list('coupons')
+    OrrisCloud.list('orders'),
+    OrrisCloud.list('customers'),
+    OrrisCloud.list('coupons')
   ]);
   return { orders:r[0]||[], customers:r[1]||[], coupons:r[2]||[] };
 }
@@ -817,19 +817,19 @@ async function migrateLocal(rows){
   var have = {};
   rows.orders.forEach(function(r){ have[r.id] = 1; });
   var mo = tryParse(ORDERS_KEY,[]).filter(function(o){ return o && o.id && !have[String(o.id)]; });
-  if(mo.length){ await DirazCloud.upsert('orders', mo.map(function(o){ return {id:String(o.id), data:o}; })); pushed = true; }
+  if(mo.length){ await OrrisCloud.upsert('orders', mo.map(function(o){ return {id:String(o.id), data:o}; })); pushed = true; }
   have = {};
   rows.customers.forEach(function(r){ have[r.phone] = 1; });
   var mc = tryParse(CUSTOMERS_KEY,[]).filter(function(c){ return c && c.phone && !have[c.phone]; });
-  if(mc.length){ await DirazCloud.upsert('customers', mc.map(function(c){ return {phone:c.phone, data:c}; })); pushed = true; }
+  if(mc.length){ await OrrisCloud.upsert('customers', mc.map(function(c){ return {phone:c.phone, data:c}; })); pushed = true; }
   have = {};
   rows.coupons.forEach(function(r){ have[r.code] = 1; });
   var mk = tryParse(COUPONS_KEY,[]).filter(function(c){ return c && c.code && !have[c.code]; });
-  if(mk.length){ await DirazCloud.upsert('coupons', mk.map(function(c){ return {code:c.code, data:c, total_uses:Number(c.totalUses)||0}; })); pushed = true; }
+  if(mk.length){ await OrrisCloud.upsert('coupons', mk.map(function(c){ return {code:c.code, data:c, total_uses:Number(c.totalUses)||0}; })); pushed = true; }
   return pushed;
 }
 async function pullFromCloud(){
-  if(!DirazCloud.hasSession()) throw new Error('SESSION_EXPIRED');
+  if(!OrrisCloud.hasSession()) throw new Error('SESSION_EXPIRED');
   var rows = await fetchAllRows();
   var cloudEmpty = !rows.orders.length && !rows.customers.length && !rows.coupons.length;
   if(localStorage.getItem(MIGRATED_KEY) !== '1'){
@@ -851,15 +851,15 @@ async function pullFromCloud(){
 function persistPerfumes(arr){
   try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(arr)); }
   catch(e){ showToast('⚠️ مساحة تخزين المتصفح ممتلئة'); }
-  if(!window.DirazCloud) return Promise.resolve();
-  return DirazCloud.upsert('perfumes',[{id:1,data:arr,updated_at:new Date().toISOString()}])
+  if(!window.OrrisCloud) return Promise.resolve();
+  return OrrisCloud.upsert('perfumes',[{id:1,data:arr,updated_at:new Date().toISOString()}])
     .catch(cloudFail);
 }
 async function loadPerfumesFromSource(){
   var cloud=null;
   try{
-    if(window.DirazCloud){
-      var rows=await DirazCloud.list('perfumes','&order=updated_at.desc');
+    if(window.OrrisCloud){
+      var rows=await OrrisCloud.list('perfumes','&order=updated_at.desc');
       if(rows.length && Array.isArray(rows[0].data)) cloud=rows[0].data;
     }
   }catch(e){}
@@ -869,8 +869,8 @@ async function loadPerfumesFromSource(){
   }
   // ما موجود بالسيرفر: استخدم المحلي، وإذا فارغ استخدم العطور الافتراضية من perfumes-data.js
   var local=tryParse(STORAGE_KEY,[]);
-  if(!local.length && Array.isArray(window.DIRAZ_DEFAULT_PERFUMES)){
-    await persistPerfumes(window.DIRAZ_DEFAULT_PERFUMES);
+  if(!local.length && Array.isArray(window.ORRIS_DEFAULT_PERFUMES)){
+    await persistPerfumes(window.ORRIS_DEFAULT_PERFUMES);
   } else if(local.length){
     await persistPerfumes(local);
   }
@@ -878,7 +878,7 @@ async function loadPerfumesFromSource(){
 
 // ══ Site Toggle ══
 function initSiteToggle(){
-  DirazCloud.rpc('site_is_open').then(function(v){
+  OrrisCloud.rpc('site_is_open').then(function(v){
     var isOpen = v !== false;
     document.getElementById('siteToggle').checked = isOpen;
     updateStatusBar(isOpen);
@@ -888,7 +888,7 @@ async function toggleSite(){
   var cb = document.getElementById('siteToggle');
   var isOpen = cb.checked;
   try{
-    await DirazCloud.upsert('site_config',[{key:'open', value:isOpen}]);
+    await OrrisCloud.upsert('site_config',[{key:'open', value:isOpen}]);
     updateStatusBar(isOpen);
     showToast(isOpen ? '✅ تم فتح الموقع' : '🔒 تم إغلاق الموقع');
   }catch(e){
@@ -914,29 +914,29 @@ function showToast(m){ var t=document.getElementById('toast'); t.textContent=m; 
 // ══ Visitors ══
 function initVisitors(){
   var today = new Date().toDateString();
-  var lastVisit = localStorage.getItem('diraz_last_visit');
+  var lastVisit = localStorage.getItem('orris_last_visit');
   
   // إذا أول زيارة للموقع، زد العداد
   if(!lastVisit){
-    var totalVisitors = parseInt(localStorage.getItem('diraz_visitors') || '0') + 1;
-    localStorage.setItem('diraz_visitors', totalVisitors);
-    localStorage.setItem('diraz_last_visit', today);
-    localStorage.setItem('diraz_first_visit', today);
+    var totalVisitors = parseInt(localStorage.getItem('orris_visitors') || '0') + 1;
+    localStorage.setItem('orris_visitors', totalVisitors);
+    localStorage.setItem('orris_last_visit', today);
+    localStorage.setItem('orris_first_visit', today);
   }
   // إذا اليوم جديد، زد زوار اليوم
   else if(lastVisit !== today){
-    var todayVisitors = parseInt(localStorage.getItem('diraz_today_visitors') || '0') + 1;
-    localStorage.setItem('diraz_today_visitors', todayVisitors);
-    localStorage.setItem('diraz_last_visit', today);
+    var todayVisitors = parseInt(localStorage.getItem('orris_today_visitors') || '0') + 1;
+    localStorage.setItem('orris_today_visitors', todayVisitors);
+    localStorage.setItem('orris_last_visit', today);
   }
   
   // إذا أول زيارة للأسبوع، زد زوار الأسبوع
   var weekStart = getWeekStart(new Date());
-  var weekKey = 'diraz_week_' + weekStart.toISOString().split('T')[0];
+  var weekKey = 'orris_week_' + weekStart.toISOString().split('T')[0];
   if(!localStorage.getItem(weekKey)){
     localStorage.setItem(weekKey, '1');
-    var weekVisitors = parseInt(localStorage.getItem('diraz_week_visitors') || '0') + 1;
-    localStorage.setItem('diraz_week_visitors', weekVisitors);
+    var weekVisitors = parseInt(localStorage.getItem('orris_week_visitors') || '0') + 1;
+    localStorage.setItem('orris_week_visitors', weekVisitors);
   }
   
   renderVisitors();
@@ -950,9 +950,9 @@ function getWeekStart(date){
 }
 
 function renderVisitors(){
-  var totalVisitors = parseInt(localStorage.getItem('diraz_visitors') || '0');
-  var todayVisitors = parseInt(localStorage.getItem('diraz_today_visitors') || '0');
-  var weekVisitors = parseInt(localStorage.getItem('diraz_week_visitors') || '0');
+  var totalVisitors = parseInt(localStorage.getItem('orris_visitors') || '0');
+  var todayVisitors = parseInt(localStorage.getItem('orris_today_visitors') || '0');
+  var weekVisitors = parseInt(localStorage.getItem('orris_week_visitors') || '0');
   
   document.getElementById('visitorsCount').textContent = totalVisitors;
   document.getElementById('todayVisitors').textContent = todayVisitors;
@@ -962,16 +962,16 @@ function renderVisitors(){
 function resetVisitors(){
   if(!confirm('هل أنت متأكد من إعادة تعيين إحصائيات الزوار؟ هذه العملة لا يمكن التراجع عنها.')) return;
   
-  localStorage.removeItem('diraz_visitors');
-  localStorage.removeItem('diraz_today_visitors');
-  localStorage.removeItem('diraz_week_visitors');
-  localStorage.removeItem('diraz_last_visit');
-  localStorage.removeItem('diraz_first_visit');
+  localStorage.removeItem('orris_visitors');
+  localStorage.removeItem('orris_today_visitors');
+  localStorage.removeItem('orris_week_visitors');
+  localStorage.removeItem('orris_last_visit');
+  localStorage.removeItem('orris_first_visit');
   
   // مسح جميع بيانات الأسبوع
   for(var i = 0; i < localStorage.length; i++){
     var key = localStorage.key(i);
-    if(key && key.startsWith('diraz_week_')){
+    if(key && key.startsWith('orris_week_')){
       localStorage.removeItem(key);
     }
   }
@@ -991,7 +991,7 @@ function renderStats(){
   orders.forEach(function(o){ if(o.customer&&o.customer.phone) phones[o.customer.phone]=1; });
   tryParse(CUSTOMERS_KEY, []).forEach(function(c){ if(c&&c.phone) phones[c.phone]=1; });
   var custs = Object.keys(phones).length;
-  var visitors = tryParse('diraz_visitors', 0);
+  var visitors = tryParse('orris_visitors', 0);
   document.getElementById('statsGrid').innerHTML =
     '<div class="stat-card"><div class="stat-icon">📦</div><div class="stat-num">' + orders.length + '</div><div class="stat-label">إجمالي الطلبات</div></div>' +
     '<div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-num">' + pending + '</div><div class="stat-label">في انتظار القبول</div></div>' +
@@ -1059,8 +1059,8 @@ function genOrderCode(){
   return 'X'+String(Date.now()).slice(-3);
 }
 function filterOrders(f,btn){ currentFilter=f; document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); }); btn.classList.add('active'); renderOrders(); }
-function setStatus(i,st){ var o=tryParse(ORDERS_KEY,[]); if(!o[i]||['pending','received','delivered'].indexOf(st)<0)return; o[i].status=st; if(st==='received') o[i].receivedAt=new Date().toISOString(); if(st==='delivered') o[i].deliveredAt=new Date().toISOString(); localStorage.setItem(ORDERS_KEY,JSON.stringify(o)); DirazCloud.update('orders','id=eq.'+encodeURIComponent(String(o[i].id)),{data:o[i],updated_at:new Date().toISOString()}).catch(cloudFail); renderStats(); renderOrders(); showToast('✅ '+STL[st]); }
-function deleteOrder(i){ if(!confirm('حذف الطلب؟'))return; var o=tryParse(ORDERS_KEY,[]); var gone=o.splice(i,1)[0]; localStorage.setItem(ORDERS_KEY,JSON.stringify(o)); if(gone) DirazCloud.remove('orders','id=eq.'+encodeURIComponent(String(gone.id))).catch(cloudFail); renderStats(); renderOrders(); showToast('🗑️ تم حذف الطلب'); }
+function setStatus(i,st){ var o=tryParse(ORDERS_KEY,[]); if(!o[i]||['pending','received','delivered'].indexOf(st)<0)return; o[i].status=st; if(st==='received') o[i].receivedAt=new Date().toISOString(); if(st==='delivered') o[i].deliveredAt=new Date().toISOString(); localStorage.setItem(ORDERS_KEY,JSON.stringify(o)); OrrisCloud.update('orders','id=eq.'+encodeURIComponent(String(o[i].id)),{data:o[i],updated_at:new Date().toISOString()}).catch(cloudFail); renderStats(); renderOrders(); showToast('✅ '+STL[st]); }
+function deleteOrder(i){ if(!confirm('حذف الطلب؟'))return; var o=tryParse(ORDERS_KEY,[]); var gone=o.splice(i,1)[0]; localStorage.setItem(ORDERS_KEY,JSON.stringify(o)); if(gone) OrrisCloud.remove('orders','id=eq.'+encodeURIComponent(String(gone.id))).catch(cloudFail); renderStats(); renderOrders(); showToast('🗑️ تم حذف الطلب'); }
 function resendWA(i){
   var order = tryParse(ORDERS_KEY,[])[i]; if(!order)return;
   var now   = new Date(order.date).toLocaleString('ar',{dateStyle:'long',timeStyle:'short'});
@@ -1072,7 +1072,7 @@ function resendWA(i){
 }
 
 // ══ Customers ══
-const CUSTOMERS_KEY = 'diraz_customers';
+const CUSTOMERS_KEY = 'orris_customers';
 function renderCustomers(){
   var orders = tryParse(ORDERS_KEY, []);
   var customers = tryParse(CUSTOMERS_KEY, []);
@@ -1119,7 +1119,7 @@ async function deleteCustomer(i){
 
   // أول شي: انسخه لسلة المحذوفات. إذا فشل النسخ ما ينحذف شي
   try{
-    await DirazCloud.upsert(TRASH_TABLE, [{ phone:deletedPhone, data:customers[i], orders:mine, deleted_at:new Date().toISOString() }]);
+    await OrrisCloud.upsert(TRASH_TABLE, [{ phone:deletedPhone, data:customers[i], orders:mine, deleted_at:new Date().toISOString() }]);
   }catch(e){
     if(e && e.message === 'SESSION_EXPIRED'){ cloudFail(e); return; }
     showToast('⚠️ ما انحذف شي — شغّل supabase-trash.sql في Supabase أولاً');
@@ -1136,8 +1136,8 @@ async function deleteCustomer(i){
   orders = orders.filter(function(o){ return !(o.customer && o.customer.phone === deletedPhone); });
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
 
-  DirazCloud.remove('customers','phone=eq.'+encodeURIComponent(deletedPhone)).catch(cloudFail);
-  if(removedIds.length) DirazCloud.remove('orders','id=in.('+removedIds.map(encodeURIComponent).join(',')+')').catch(cloudFail);
+  OrrisCloud.remove('customers','phone=eq.'+encodeURIComponent(deletedPhone)).catch(cloudFail);
+  if(removedIds.length) OrrisCloud.remove('orders','id=in.('+removedIds.map(encodeURIComponent).join(',')+')').catch(cloudFail);
 
   renderStats(); renderOrders(); renderCustomers();
   loadTrash();
@@ -1149,7 +1149,7 @@ var TRASH_TABLE = 'customers_trash';
 var _trash = [];
 async function loadTrash(){
   try{
-    var rows = await DirazCloud.list(TRASH_TABLE);
+    var rows = await OrrisCloud.list(TRASH_TABLE);
     _trash = (rows||[]).sort(function(a,b){ return new Date(b.deleted_at||0) - new Date(a.deleted_at||0); });
   }catch(e){ _trash = []; }
   var n = document.getElementById('trashCount'); if(n) n.textContent = _trash.length;
@@ -1180,9 +1180,9 @@ async function restoreCustomer(i){
   var t = _trash[i]; if(!t) return;
   var os = (t.orders||[]).filter(function(o){ return o && o.id; });
   try{
-    await DirazCloud.upsert('customers', [{ phone:t.phone, data:Object.assign({}, t.data||{}, {restored:true}) }]);
-    if(os.length) await DirazCloud.upsert('orders', os.map(function(o){ return { id:String(o.id), data:o }; }));
-    await DirazCloud.remove(TRASH_TABLE, 'phone=eq.'+encodeURIComponent(t.phone));
+    await OrrisCloud.upsert('customers', [{ phone:t.phone, data:Object.assign({}, t.data||{}, {restored:true}) }]);
+    if(os.length) await OrrisCloud.upsert('orders', os.map(function(o){ return { id:String(o.id), data:o }; }));
+    await OrrisCloud.remove(TRASH_TABLE, 'phone=eq.'+encodeURIComponent(t.phone));
   }catch(e){ cloudFail(e); return; }
   try{ await pullFromCloud(); }catch(e){}
   renderStats(); renderOrders(); renderCustomers(); loadTrash();
@@ -1191,7 +1191,7 @@ async function restoreCustomer(i){
 async function purgeCustomer(i){
   var t = _trash[i]; if(!t) return;
   if(!confirm('حذف نهائي للزبون '+t.phone+' وطلباته؟\nما تكدر ترجّعه بعدها.')) return;
-  try{ await DirazCloud.remove(TRASH_TABLE, 'phone=eq.'+encodeURIComponent(t.phone)); }
+  try{ await OrrisCloud.remove(TRASH_TABLE, 'phone=eq.'+encodeURIComponent(t.phone)); }
   catch(e){ cloudFail(e); return; }
   loadTrash();
   showToast('🗑️ انحذف نهائياً');
@@ -1217,7 +1217,7 @@ function addCoupon(){
   var commissionMulti = withoutCom ? 0 : (parseInt(document.getElementById('cp_commission2').value||'0')||0);
   coupons.unshift({code:code,type:type,value:value,maxUses:maxUses,active:true,totalUses:0,createdAt:new Date().toISOString(),creatorName:creatorName,commissionUnit:commissionUnit,commissionMulti:commissionMulti,creatorToken:genToken()});
   localStorage.setItem(COUPONS_KEY,JSON.stringify(coupons));
-  DirazCloud.upsert('coupons',[{code:code,data:coupons[0],total_uses:0}]).catch(cloudFail);
+  OrrisCloud.upsert('coupons',[{code:code,data:coupons[0],total_uses:0}]).catch(cloudFail);
   renderCoupons();
   document.getElementById('cp_code').value = '';
   document.getElementById('cp_value').value = '';
@@ -1237,7 +1237,7 @@ function copyCreatorLink(i,regen){
   if(!c.creatorToken || regen){
     c.creatorToken=genToken(); if(c.commission===undefined && c.commission50===undefined && c.commission30===undefined && c.commissionUnit===undefined){ c.commissionUnit=1000; c.commissionMulti=2000; }
     localStorage.setItem(COUPONS_KEY,JSON.stringify(cs));
-    DirazCloud.update('coupons','code=eq.'+encodeURIComponent(c.code),{data:c,updated_at:new Date().toISOString()}).catch(cloudFail);
+    OrrisCloud.update('coupons','code=eq.'+encodeURIComponent(c.code),{data:c,updated_at:new Date().toISOString()}).catch(cloudFail);
     renderCoupons();
   }
   copyText(creatorLink(c)).then(function(){ showToast('🔗 تم نسخ رابط المنشئ'); });
@@ -1265,11 +1265,11 @@ function editCommission(i){
   if(v2===null) return;
   c.commissionUnit=parseInt(v)||0; c.commissionMulti=parseInt(v2)||0; delete c.commission; delete c.commission50; delete c.commission30;
   localStorage.setItem(COUPONS_KEY,JSON.stringify(cs));
-  DirazCloud.update('coupons','code=eq.'+encodeURIComponent(c.code),{data:c,updated_at:new Date().toISOString()}).catch(cloudFail);
+  OrrisCloud.update('coupons','code=eq.'+encodeURIComponent(c.code),{data:c,updated_at:new Date().toISOString()}).catch(cloudFail);
   renderCoupons();
 }
-function toggleCouponActive(i){ var c=tryParse(COUPONS_KEY,[]); if(!c[i])return; c[i].active=!c[i].active; localStorage.setItem(COUPONS_KEY,JSON.stringify(c)); DirazCloud.update('coupons','code=eq.'+encodeURIComponent(c[i].code),{data:c[i],updated_at:new Date().toISOString()}).catch(cloudFail); renderCoupons(); showToast(c[i].active?'✅ الكود مفعّل':'⏸️ الكود متوقف'); }
-function deleteCoupon(i){ if(!confirm('حذف الكود؟'))return; var c=tryParse(COUPONS_KEY,[]); var gone=c.splice(i,1)[0]; localStorage.setItem(COUPONS_KEY,JSON.stringify(c)); if(gone){ DirazCloud.remove('coupons','code=eq.'+encodeURIComponent(gone.code)).catch(cloudFail); DirazCloud.remove('coupon_usage','code=eq.'+encodeURIComponent(gone.code)).catch(cloudFail); } renderCoupons(); showToast('🗑️ تم حذف الكود'); }
+function toggleCouponActive(i){ var c=tryParse(COUPONS_KEY,[]); if(!c[i])return; c[i].active=!c[i].active; localStorage.setItem(COUPONS_KEY,JSON.stringify(c)); OrrisCloud.update('coupons','code=eq.'+encodeURIComponent(c[i].code),{data:c[i],updated_at:new Date().toISOString()}).catch(cloudFail); renderCoupons(); showToast(c[i].active?'✅ الكود مفعّل':'⏸️ الكود متوقف'); }
+function deleteCoupon(i){ if(!confirm('حذف الكود؟'))return; var c=tryParse(COUPONS_KEY,[]); var gone=c.splice(i,1)[0]; localStorage.setItem(COUPONS_KEY,JSON.stringify(c)); if(gone){ OrrisCloud.remove('coupons','code=eq.'+encodeURIComponent(gone.code)).catch(cloudFail); OrrisCloud.remove('coupon_usage','code=eq.'+encodeURIComponent(gone.code)).catch(cloudFail); } renderCoupons(); showToast('🗑️ تم حذف الكود'); }
 function renderCoupons(){
   var coupons = tryParse(COUPONS_KEY,[]);
   var el = document.getElementById('couponsList');
@@ -1398,8 +1398,8 @@ function renderList(){
   }).join('');
 }
 (async function(){
-  if(DirazCloud.hasSession()){
-    try{ if(await DirazCloud.rpc('am_i_admin')===true) enterPanel(); }catch(e){}
+  if(OrrisCloud.hasSession()){
+    try{ if(await OrrisCloud.rpc('am_i_admin')===true) enterPanel(); }catch(e){}
   }
 })();
 </script>
@@ -1415,7 +1415,7 @@ function spFail(e){
 }
 async function spLoadChats(){
   try{
-    var rows = await DirazCloud.rpc('support_admin_chats');
+    var rows = await OrrisCloud.rpc('support_admin_chats');
     spChats = Array.isArray(rows) ? rows : [];
     document.getElementById('spStatus').style.display = 'none';
     var total = spChats.reduce(function(a,c){ return a + (Number(c.unread)||0); }, 0);
@@ -1446,7 +1446,7 @@ async function spOpen(id){
 async function spLoadThread(scroll){
   if(!spCur) return;
   try{
-    var rows = await DirazCloud.rpc('support_admin_thread', {p_chat: spCur});
+    var rows = await OrrisCloud.rpc('support_admin_thread', {p_chat: spCur});
     rows = Array.isArray(rows) ? rows : [];
     var box = document.getElementById('spMsgs');
     var near = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
@@ -1461,7 +1461,7 @@ async function spSend(){
   if(!spCur || !v) return;
   var b = document.getElementById('spSendBtn'); b.disabled = true;
   try{
-    await DirazCloud.rpc('support_admin_reply', {p_chat: spCur, p_body: v});
+    await OrrisCloud.rpc('support_admin_reply', {p_chat: spCur, p_body: v});
     inp.value = '';
     await spLoadThread(true); spLoadChats();
   }catch(e){ showToast('❌ فشل إرسال الرد'); }
@@ -1470,7 +1470,7 @@ async function spSend(){
 async function spClose(){ // غلق التذكرة: تنمسح كل رسائل هذا الشخص
   if(!spCur) return;
   try{
-    await DirazCloud.rpc('support_admin_delete', {p_chat: spCur});
+    await OrrisCloud.rpc('support_admin_delete', {p_chat: spCur});
     spCur = null;
     document.getElementById('spMsgs').innerHTML = '';
     document.getElementById('spWho').textContent = 'اختر محادثة من القائمة';
@@ -1497,13 +1497,13 @@ document.addEventListener('DOMContentLoaded', function(){
 function pnEsc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 async function loadPushAdmin(){
   try{
-    var st = await DirazCloud.rpc('push_admin_stats');
+    var st = await OrrisCloud.rpc('push_admin_stats');
     document.getElementById('pushStats').innerHTML = '👥 مشتركين بالإشعارات: <strong>'+(st.total||0)+'</strong> &nbsp;|&nbsp; 🛍️ عندهم سلة: <strong>'+(st.withCart||0)+'</strong>';
-    var all = await DirazCloud.list('push_messages','&order=send_at.desc&limit=200');
+    var all = await OrrisCloud.list('push_messages','&order=send_at.desc&limit=200');
     var pend = all.filter(function(m){ return m.status==='scheduled'; });
     var done = all.filter(function(m){ return m.status!=='scheduled'; });
     var old = done.slice(3);
-    if(old.length){ try{ await DirazCloud.remove('push_messages','id=in.('+old.map(function(m){return m.id;}).join(',')+')'); }catch(e){} }
+    if(old.length){ try{ await OrrisCloud.remove('push_messages','id=in.('+old.map(function(m){return m.id;}).join(',')+')'); }catch(e){} }
     var rows = pend.concat(done.slice(0,3));
     var box = document.getElementById('pushList');
     if(!rows||!rows.length){ box.innerHTML='<div class="no-items">لا توجد رسائل بعد</div>'; return; }
@@ -1519,7 +1519,7 @@ async function loadPushAdmin(){
 }
 async function pushSend(){
   var title=document.getElementById('pn_title').value.trim(), body=document.getElementById('pn_body').value.trim();
-  var url=document.getElementById('pn_url').value.trim()||'/perfumes.html';
+  var url=document.getElementById('pn_url').value.trim()||'/shop.html';
   var mode=document.getElementById('pn_mode').value, btn=document.getElementById('pn_btn');
   if(!title||!body){ showToast('❌ اكتب العنوان والنص'); return; }
   var at=new Date();
@@ -1531,10 +1531,10 @@ async function pushSend(){
   }
   btn.disabled=true;
   try{
-    await DirazCloud.insert('push_messages',[{title:title,body:body,url:url,send_at:at.toISOString()}]);
+    await OrrisCloud.insert('push_messages',[{title:title,body:body,url:url,send_at:at.toISOString()}]);
     if(mode==='now'){
-      var tok=await DirazCloud.token();
-      var r=await fetch(window.DIRAZ_SUPABASE_URL+'/functions/v1/push-sender',{method:'POST',headers:{Authorization:'Bearer '+tok,apikey:window.DIRAZ_SUPABASE_KEY,'Content-Type':'application/json'},body:'{}'});
+      var tok=await OrrisCloud.token();
+      var r=await fetch(window.ORRIS_SUPABASE_URL+'/functions/v1/push-sender',{method:'POST',headers:{Authorization:'Bearer '+tok,apikey:window.ORRIS_SUPABASE_KEY,'Content-Type':'application/json'},body:'{}'});
       var j=null; try{ j=await r.json(); }catch(x){}
       if(!r.ok||!j) showToast('⚠️ انحفظت وستُرسل خلال 5 دقائق');
       else if(j.tried===0) showToast('⚠️ ما في رسالة للإرسال');
@@ -1548,7 +1548,7 @@ async function pushSend(){
 }
 async function pushDelete(id){
   if(!confirm('إلغاء هذه الرسالة المجدولة؟')) return;
-  try{ await DirazCloud.remove('push_messages','id=eq.'+id+'&status=eq.scheduled'); loadPushAdmin(); }catch(e){ showToast('❌ فشل الحذف'); }
+  try{ await OrrisCloud.remove('push_messages','id=eq.'+id+'&status=eq.scheduled'); loadPushAdmin(); }catch(e){ showToast('❌ فشل الحذف'); }
 }
 
 // ── عبارات جاهزة ──
@@ -1579,7 +1579,7 @@ function extTotal(c){ return (Array.isArray(c.externalLog)?c.externalLog:[]).red
 function extSel(){ var cs=tryParse(COUPONS_KEY,[]); var code=document.getElementById('ext_code').value; for(var i=0;i<cs.length;i++){ if(cs[i].code===code) return {cs:cs,i:i,c:cs[i]}; } return null; }
 function extPersist(cs,c){
   localStorage.setItem(COUPONS_KEY,JSON.stringify(cs));
-  DirazCloud.update('coupons','code=eq.'+encodeURIComponent(c.code),{data:c,updated_at:new Date().toISOString()}).catch(cloudFail);
+  OrrisCloud.update('coupons','code=eq.'+encodeURIComponent(c.code),{data:c,updated_at:new Date().toISOString()}).catch(cloudFail);
   renderCoupons();
 }
 function extFill(){
@@ -1620,7 +1620,7 @@ async function siteOrderAdd(){
   if(n50) items.push({name:'عطر 50 مل',price:unit,currency:'دينار',qty:n50,size:'50ml'});
   if(n30) items.push({name:'عطر 30 مل',price:unit,currency:'دينار',qty:n30,size:'30ml'});
   var order={id:Date.now(),code:genOrderCode(),customer:{name:'',phone:'',address:'',province:'',area:'',age:''},items:items,subtotal:total,deliveryFee:0,total:total,currency:'دينار',date:when.toISOString(),status:'delivered',coupon:{code:s.c.code,discount:0},manual:true};
-  try{ await DirazCloud.upsert('orders',[{id:String(order.id),data:order}]); }
+  try{ await OrrisCloud.upsert('orders',[{id:String(order.id),data:order}]); }
   catch(e){ cloudFail(e); return; }
   var os=tryParse(ORDERS_KEY,[]); os.push(order);
   os.sort(function(x,y){ return new Date(y.date)-new Date(x.date); });
@@ -1685,13 +1685,13 @@ function updateSectionBars(s){
   });
 }
 function initSections(){
-  DirazCloud.rpc('site_sections').then(function(r){ updateSectionBars(r && typeof r==='object' ? r : {men:true,women:true}); })
+  OrrisCloud.rpc('site_sections').then(function(r){ updateSectionBars(r && typeof r==='object' ? r : {men:true,women:true}); })
     .catch(function(){ updateSectionBars({men:true,women:true}); });
 }
 async function toggleSection(){
   var s = { men: document.getElementById('secMen').checked, women: document.getElementById('secWomen').checked };
   try{
-    await DirazCloud.upsert('site_config',[{key:'sections', value:s}]);
+    await OrrisCloud.upsert('site_config',[{key:'sections', value:s}]);
     updateSectionBars(s);
     showToast('✅ تم تحديث الأقسام');
   }catch(e){
@@ -1719,7 +1719,7 @@ function rvCounts(){
 }
 async function rvLoad(){
   try{
-    var rows=await DirazCloud.rpc('admin_reviews');
+    var rows=await OrrisCloud.rpc('admin_reviews');
     rvAll=Array.isArray(rows)?rows:[];
     document.getElementById('rvStatus').style.display='none';
     rvCounts();
@@ -1761,7 +1761,7 @@ async function rvAdd(){
   if(!n||!b){ showToast('✏️ اكتب الاسم والرأي'); return; }
   if(!g){ showToast('⚠️ حدد الجنس: بنت أو رجل'); return; }
   try{
-    var r=await DirazCloud.rpc('admin_review_add',{p_name:n,p_body:b,p_gender:g});
+    var r=await OrrisCloud.rpc('admin_review_add',{p_name:n,p_body:b,p_gender:g});
     if(!r||r.ok!==true) throw new Error('fail');
     document.getElementById('rv_name').value=''; document.getElementById('rv_body').value=''; document.getElementById('rv_gender').value='';
     showToast('✅ انضاف الرأي ونُشر');
@@ -1769,7 +1769,7 @@ async function rvAdd(){
   }catch(e){ rvFail(e); showToast('❌ فشلت الإضافة'); }
 }
 async function rvApprove(id){
-  try{ await DirazCloud.rpc('admin_review_approve',{p_id:id}); showToast('✅ تم نشر الرأي'); rvLoad(); }
+  try{ await OrrisCloud.rpc('admin_review_approve',{p_id:id}); showToast('✅ تم نشر الرأي'); rvLoad(); }
   catch(e){ showToast('❌ فشلت الموافقة'); }
 }
 var rvRejId=null;
@@ -1788,7 +1788,7 @@ async function rvRejectConfirm(){
   var reason=document.getElementById('rvRejReason').value.trim();
   if(reason.length<2){ showToast('✏️ اكتب سبب الحذف'); return; }
   try{
-    var r=await DirazCloud.rpc('admin_review_reject',{p_id:rvRejId,p_reason:reason});
+    var r=await OrrisCloud.rpc('admin_review_reject',{p_id:rvRejId,p_reason:reason});
     if(!r||r.ok!==true) throw new Error('fail');
     rvRejectClose(); showToast('🗑️ انحذف الرأي وراح يوصل الزبون السبب'); rvLoad();
   }catch(e){
@@ -1798,7 +1798,7 @@ async function rvRejectConfirm(){
 }
 async function rvDelete(id){
   if(!confirm('حذف هذا الرأي نهائياً؟')) return;
-  try{ await DirazCloud.rpc('admin_review_delete',{p_id:id}); showToast('🗑️ انحذف الرأي'); rvLoad(); }
+  try{ await OrrisCloud.rpc('admin_review_delete',{p_id:id}); showToast('🗑️ انحذف الرأي'); rvLoad(); }
   catch(e){ showToast('❌ فشل الحذف'); }
 }
 
@@ -1822,7 +1822,7 @@ function rvLogRender(){
 }
 async function rvLogLoad(){
   try{
-    var rows=await DirazCloud.rpc('admin_review_log');
+    var rows=await OrrisCloud.rpc('admin_review_log');
     rvLogRows=Array.isArray(rows)?rows:[];
     var top=rvLogRows[0];
     if(top){
@@ -1840,12 +1840,12 @@ async function rvLogLoad(){
 }
 async function rvLogClear(){
   if(!confirm('مسح كل السجل؟\nراح تنحذف الآراء المرفوضة والمعلّقة المرتبطة به نهائياً.\nالآراء المنشورة ما تنحذف (بس حركتها تنشال).')) return;
-  try{ await DirazCloud.rpc('admin_review_log_clear'); showToast('🧹 انمسح السجل والآراء المرتبطة'); rvLoad(); }
+  try{ await OrrisCloud.rpc('admin_review_log_clear'); showToast('🧹 انمسح السجل والآراء المرتبطة'); rvLoad(); }
   catch(e){ showToast(/admin_review_log_clear|PGRST202|404|Could not find/i.test(String((e&&e.message)||e))?'⚠️ شغّل supabase-reviews-v4.sql أولاً':'❌ فشل المسح'); }
 }
 async function rvLogDel(id){
   if(!confirm('حذف هذه الحركة راح يحذف الرأي نفسه أيضاً. متأكد؟')) return;
-  try{ await DirazCloud.rpc('admin_review_log_delete',{p_id:id}); showToast('🗑️ انحذف الرأي والحركة'); rvLoad(); }
+  try{ await OrrisCloud.rpc('admin_review_log_delete',{p_id:id}); showToast('🗑️ انحذف الرأي والحركة'); rvLoad(); }
   catch(e){ showToast(/admin_review_log_delete|PGRST202|404|Could not find/i.test(String((e&&e.message)||e))?'⚠️ شغّل supabase-reviews-v4.sql أولاً':'❌ فشل الحذف'); }
 }
 function rvLogToggle(){
@@ -1930,7 +1930,7 @@ async function aiOpen(){
   aiEl('aiModal').classList.add('open'); aiEl('aiTestBox').style.display='none'; aiStatus('');
   aiSlots=[aiNewSlot(),aiNewSlot(),aiNewSlot()]; aiSlot=0;
   var cfg=null;
-  try{ var rows=await DirazCloud.list('ai_config','&id=eq.1'); cfg=rows&&rows[0]&&rows[0].data; }
+  try{ var rows=await OrrisCloud.list('ai_config','&id=eq.1'); cfg=rows&&rows[0]&&rows[0].data; }
   catch(e){ var m=String((e&&e.message)||e); aiStatus(/ai_config|PGRST|404|relation/i.test(m)?'⚠️ شغّل supabase-ai.sql في Supabase أولاً حتى تنحفظ الإعدادات':'⚠️ تعذّر تحميل الإعدادات'); }
   if(cfg){
     /* الإعداد القديم (API واحد) ينتقل تلقائياً للخانة 1 */
@@ -1963,7 +1963,7 @@ async function aiSave(silent){
     if(!/^https:\/\//i.test(proxy)){ showToast('❌ اكتب رابط الوسيط (Worker) يبدأ بـ https://'); return false; }
   }
   var old=null;
-  try{ var rows=await DirazCloud.list('ai_config','&id=eq.1'); old=rows&&rows[0]&&rows[0].data; }catch(e){}
+  try{ var rows=await OrrisCloud.list('ai_config','&id=eq.1'); old=rows&&rows[0]&&rows[0].data; }catch(e){}
   var oldApis=(old&&Array.isArray(old.apis))?old.apis:(old?[{key:old.key}]:[]);
   var apis=aiSlots.map(function(s,i){
     var key=s.keyNew; /* حقل المفتاح هو المرجع: يطلع بالمفتاح المحفوظ، وإذا مسحته ينمسح */
@@ -1972,7 +1972,7 @@ async function aiSave(silent){
   if(old&&Array.isArray(old.apis)&&old.apis[3]) apis[3]=old.apis[3]; /* API النسخة الكاملة ينحفظ من نافذتها، هنا نخليه مثل ما هو */
   var cfg={enabled:enabled,proxy:proxy.replace(/\/+$/,''),prompt:aiEl('ai_prompt').value.trim(),apis:apis};
   try{
-    await DirazCloud.upsert('ai_config',[{id:1,data:cfg,updated_at:new Date().toISOString()}]);
+    await OrrisCloud.upsert('ai_config',[{id:1,data:cfg,updated_at:new Date().toISOString()}]);
     aiSlots.forEach(function(s,i){ s.hasKey=!!apis[i].key; s.keyNew=apis[i].key||''; });
     aiShow();
     if(!silent) showToast('✅ انحفظت إعدادات الذكاء الاصطناعي');
@@ -1990,9 +1990,9 @@ function aiBar(rem,lim){ var pct=lim>0?Math.max(0,Math.min(100,rem/lim*100)):0; 
 async function aiUsageLoad(){
   var body=aiEl('aiUsageBody'); if(!body) return;
   var cfg=null, rows=[];
-  try{ var c=await DirazCloud.list('ai_config','&id=eq.1'); cfg=c&&c[0]&&c[0].data; }catch(e){}
+  try{ var c=await OrrisCloud.list('ai_config','&id=eq.1'); cfg=c&&c[0]&&c[0].data; }catch(e){}
   var apis=(cfg&&Array.isArray(cfg.apis))?cfg.apis:[];
-  try{ rows=await DirazCloud.list('ai_usage','&day=gte.'+aiUsageDay(23))||[]; }
+  try{ rows=await OrrisCloud.list('ai_usage','&day=gte.'+aiUsageDay(23))||[]; }
   catch(e){ body.textContent='⚠️ شغّل supabase-ai-usage.sql في Supabase حتى يشتغل العدّاد'; return; }
   var tLim=0,tRem=0,tUsed=0,counted=0,html='';
   var items=[];
@@ -2036,7 +2036,7 @@ async function aiTest(all){
 }
 
 /* ترويسة اختبار الذكاء: الـ Worker صار يقبل test:true من الأدمن فقط (يتحقق من JWT بدالة am_i_admin) */
-async function dzAuthHeaders(){ var h={'Content-Type':'application/json'}; try{ var t=await DirazCloud.token(); if(t) h.Authorization='Bearer '+t; }catch(e){} return h; }
+async function dzAuthHeaders(){ var h={'Content-Type':'application/json'}; try{ var t=await OrrisCloud.token(); if(t) h.Authorization='Bearer '+t; }catch(e){} return h; }
 /* إظهار/إخفاء المفتاح: يرجع مخفي تلقائياً كل ما تغيّر التبويب أو سكّرت النافذة */
 function dzEye(id,btn){ var i=document.getElementById(id); if(!i) return; var show=i.type==='password'; i.type=show?'text':'password'; btn.textContent=show?'🙈':'👁️'; btn.setAttribute('aria-label',show?'إخفاء المفتاح':'إظهار المفتاح'); }
 function dzEyeReset(){ ['ai_key','fa_key'].forEach(function(id){ var i=document.getElementById(id); if(!i) return; i.type='password'; var b=i.parentNode&&i.parentNode.querySelector('.key-eye'); if(b){ b.textContent='👁️'; b.setAttribute('aria-label','إظهار المفتاح'); } }); }
@@ -2066,7 +2066,7 @@ async function fullGen(){
   if(fgPlan==='max') val=0;
   fullGenBusy=true;
   try{
-    var code=await DirazCloud.rpc('ai_full_gen',{p_plan:fgPlan,p_value:val});
+    var code=await OrrisCloud.rpc('ai_full_gen',{p_plan:fgPlan,p_value:val});
     if(typeof code!=='string'||!code) throw new Error('empty');
     ['aiFullCode','fullCodeBox2'].forEach(function(id){ var b=document.getElementById(id); if(b){ b.style.display='block'; b.dataset.code=code; b.querySelector('.fc').textContent=code; var pl=b.querySelector('.fcp'); if(pl) pl.textContent='الباقة: '+planTxt(fgPlan,val); } });
     showToast('🔑 انولد كود جديد — '+planTxt(fgPlan,val));
@@ -2085,7 +2085,7 @@ function fullClose(){ var m=document.getElementById('fullModal'); if(m) m.classL
 async function fullLoad(){
   var list=document.getElementById('fullList'), cnt=document.getElementById('fullCount'); if(!list) return;
   try{
-    var r=await DirazCloud.rpc('ai_full_list');
+    var r=await OrrisCloud.rpc('ai_full_list');
     var s=(r&&Array.isArray(r.sessions))?r.sessions:[], codes=(r&&r.codes)||0;
     cnt.textContent='👥 المفعّلين: '+s.length+(codes?' • أكواد بانتظار الاستعمال: '+codes:'');
     list.innerHTML=s.length?s.map(function(x){
@@ -2117,13 +2117,13 @@ async function fueSave(id){
   if(p==='plus'&&(v<1||v>100000)){ showToast('❌ اكتب عدد الكردت باليوم'); return; }
   if(p==='pro'&&(v<1||v>3650)){ showToast('❌ اكتب عدد الأيام'); return; }
   if(p==='max') v=0;
-  try{ await DirazCloud.rpc('ai_full_edit',{p_id:id,p_plan:p,p_value:v}); showToast('✅ انعدلت الباقة'); fullLoad(); }
+  try{ await OrrisCloud.rpc('ai_full_edit',{p_id:id,p_plan:p,p_value:v}); showToast('✅ انعدلت الباقة'); fullLoad(); }
   catch(e){ showToast(fMissing(e)?'⚠️ شغّل supabase-ai-plans.sql في Supabase أولاً':'❌ فشل التعديل'); }
 }
 async function fullCodesLoad(){
   var list=document.getElementById('fullCodesList'), cnt=document.getElementById('fullCodesCount'); if(!list) return;
   try{
-    var r=await DirazCloud.rpc('ai_full_codes_list');
+    var r=await OrrisCloud.rpc('ai_full_codes_list');
     var a=Array.isArray(r)?r:((r&&Array.isArray(r.codes))?r.codes:[]);
     cnt.textContent='🗝️ أكواد غير مستخدمة: '+a.length;
     list.innerHTML=a.length?a.map(function(x){
@@ -2137,19 +2137,19 @@ function fullCodeCopy(b){ var c=b&&b.dataset.code; if(!c) return; function ok(){
 async function fullCodeDel(b){
   var c=b&&b.dataset.code; if(!c) return;
   if(!confirm('تحذف هذا الكود؟ ما راح يشتغل بعد.')) return;
-  try{ await DirazCloud.rpc('ai_full_code_del',{p_code:c}); showToast('🗑️ انحذف الكود'); fullCodesLoad(); fullLoad(); }catch(e){ showToast('❌ فشل الحذف'); }
+  try{ await OrrisCloud.rpc('ai_full_code_del',{p_code:c}); showToast('🗑️ انحذف الكود'); fullCodesLoad(); fullLoad(); }catch(e){ showToast('❌ فشل الحذف'); }
 }
 async function fullCodesDelAll(){
   if(!confirm('تحذف كل الأكواد غير المستخدمة؟')) return;
-  try{ await DirazCloud.rpc('ai_full_codes_del_all'); showToast('🗑️ انحذفت كل الأكواد'); fullCodesLoad(); fullLoad(); }catch(e){ showToast('❌ فشل الحذف'); }
+  try{ await OrrisCloud.rpc('ai_full_codes_del_all'); showToast('🗑️ انحذفت كل الأكواد'); fullCodesLoad(); fullLoad(); }catch(e){ showToast('❌ فشل الحذف'); }
 }
 async function fullKick(id){
   if(!confirm('تريد تطرد هذا الزبون من النسخة الكاملة؟')) return;
-  try{ await DirazCloud.rpc('ai_full_kick',{p_id:id}); showToast('🚫 انطرد'); fullLoad(); }catch(e){ showToast('❌ فشل الطرد'); }
+  try{ await OrrisCloud.rpc('ai_full_kick',{p_id:id}); showToast('🚫 انطرد'); fullLoad(); }catch(e){ showToast('❌ فشل الطرد'); }
 }
 // ── الـ API الخاص بالنسخة الكاملة (يُحفظ كـ apis[3] داخل ai_config بدون ما يلمس الباقي) ──
 function faEl(id){ return document.getElementById(id); }
-async function faCfg(){ try{ var r=await DirazCloud.list('ai_config','&id=eq.1'); return (r&&r[0]&&r[0].data)||null; }catch(e){ return null; } }
+async function faCfg(){ try{ var r=await OrrisCloud.list('ai_config','&id=eq.1'); return (r&&r[0]&&r[0].data)||null; }catch(e){ return null; } }
 function faPickProv(){
   var k=faEl('fa_prov').value, p=AI_PROVS[k]; if(!p) return;
   faEl('fa_url').value=p.url; faEl('fa_model').value=p.model; faEl('fa_format').value=p.format;
@@ -2179,7 +2179,7 @@ async function faSave(silent,clear){
   oldApis[3]=item;
   var cfg=Object.assign({enabled:false,proxy:'',prompt:''},old||{},{apis:oldApis});
   try{
-    await DirazCloud.upsert('ai_config',[{id:1,data:cfg,updated_at:new Date().toISOString()}]);
+    await OrrisCloud.upsert('ai_config',[{id:1,data:cfg,updated_at:new Date().toISOString()}]);
     faEl('fa_key').value=item.key||'';
     faEl('fa_keyHint').textContent=item.key?'🔒 المفتاح محفوظ ومخفي — اضغط 👁️ لإظهاره':'';
     if(!silent) showToast(clear?'🧹 تفرّغ الـ API الخاص':'✅ انحفظ الـ API الخاص بالنسخة الكاملة');
@@ -2207,7 +2207,7 @@ async function faTest(){
 
 async function fullKickAll(){
   if(!confirm('تطرد كل المفعّلين؟')) return;
-  try{ await DirazCloud.rpc('ai_full_kick_all'); showToast('🚫 انطرد الكل'); fullLoad(); }catch(e){ showToast('❌ فشل الطرد'); }
+  try{ await OrrisCloud.rpc('ai_full_kick_all'); showToast('🚫 انطرد الكل'); fullLoad(); }catch(e){ showToast('❌ فشل الطرد'); }
 }
 </script>
 <script id="dzAccJs">
