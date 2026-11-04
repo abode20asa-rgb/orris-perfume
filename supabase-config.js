@@ -2,7 +2,7 @@
    1) بدّل رابط المشروع تحت (Project Settings → API → Project URL)
    2) المفتاح تحت هو publishable (آمن للمتصفح). لا تحط sb_secret هنا أبداً
    3) ضع هذا الملف بجانب admin.html */
-window.ORRIS_SUPABASE_URL = 'PASTE_PROJECT_URL_HERE';   // مثل https://abcdxyz.supabase.co
+window.ORRIS_SUPABASE_URL = 'https://bqsrzglltbmboumybpyh.supabase.co';   // مثل https://abcdxyz.supabase.co
 window.ORRIS_SUPABASE_KEY = 'sb_publishable_9zWNDk9PJgj3OCCl4IlEvQ_dzGcDNQ0';
 
 (function(){
