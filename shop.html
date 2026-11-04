@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>العطور | ORRIS</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090c;--surface:#0e1410;--green:#1d3319;--green-2:#2f5a28;--cream:#efe6d2;--muted:#a9a592;--gold:#b58a50;--line:#22301f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#07090c;--surface:#0e1410;--cream:#efe6d2;--muted:#a9a592}}
+:root[data-theme="dark"]{--bg:#07090c;--surface:#0e1410;--cream:#efe6d2;--muted:#a9a592}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--cream);font-family:'Tajawal',system-ui,sans-serif;font-weight:300;line-height:1.8}
+h1,h2,h3{font-family:'Amiri','Times New Roman',serif;font-weight:400}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 22px}
+header{display:flex;justify-content:space-between;align-items:center;padding:20px 0}
+.logo{font-family:'Amiri',serif;letter-spacing:.35em;font-size:22px}
+.hbtns{display:flex;gap:16px;align-items:center;color:var(--muted);font-size:15px}
+.hbtns a:hover,.hbtns button:hover{color:var(--cream)}
+.cartbtn{border:1px solid var(--gold);padding:5px 16px;color:var(--cream)}
+.cartbtn b{display:inline-block;min-width:22px;margin-right:6px;background:var(--gold);color:#07090c;border-radius:11px;text-align:center;font-weight:500;font-size:14px}
+.view{display:none}.view.on{display:block}
+.hero{position:relative;text-align:center;padding:70px 0 90px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:50% auto auto 50%;width:min(560px,90vw);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,var(--green) 0%,rgba(29,51,25,.55) 45%,transparent 70%)}
+.hero>*{position:relative}
+.mark{font-family:'Amiri',serif;font-size:clamp(76px,22vw,210px);letter-spacing:.12em;line-height:1;direction:ltr;padding-left:.12em}
+.hero p{margin-top:14px;font-size:19px;color:var(--muted)}
+.btns{margin-top:34px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;padding:12px 30px;border:1px solid var(--gold);color:var(--cream);border-radius:2px;font-size:16px;transition:background .2s}
+.btn.fill{background:var(--gold);color:#07090c}
+.btn:hover{background:var(--green-2);border-color:var(--green-2);color:var(--cream)}
+section{padding:60px 0;border-top:1px solid var(--line)}
+h2{font-size:34px;margin-bottom:8px}
+.sub{color:var(--muted);margin-bottom:30px}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.cat{border:1px solid var(--line);padding:30px 16px;text-align:center;font-family:'Amiri',serif;font-size:22px;background:linear-gradient(180deg,var(--surface),var(--bg));transition:border-color .2s}
+.cat:hover{border-color:var(--gold)}
+.perks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:30px}
+.perks h3{font-size:22px;color:var(--gold)}
+.perks p{color:var(--muted);font-size:15px}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px}
+.chip{border:1px solid var(--line);padding:5px 20px;color:var(--muted)}
+.chip.on{border-color:var(--gold);color:var(--cream);background:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);padding:22px 20px 20px;display:flex;flex-direction:column}
+.bottle{height:140px;display:grid;place-items:center;background:linear-gradient(160deg,var(--green),#0a120a);margin-bottom:18px}
+.bottle i{display:block;width:44px;height:74px;border:1.5px solid var(--cream);border-radius:8px;position:relative}
+.bottle i::before{content:"";position:absolute;top:-17px;left:13px;width:14px;height:14px;border:1.5px solid var(--cream);border-bottom:0}
+.card h3{font-size:22px}
+.card small{color:var(--muted);font-size:14px}
+.card .add{margin-top:14px;border:1px solid var(--gold);padding:7px;transition:background .2s}
+.card .add:hover{background:var(--gold);color:#07090c}
+.step{margin-top:14px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--gold);border-radius:40px;padding:4px;background:var(--bg)}
+.step button{width:36px;height:36px;border-radius:50%;font-size:20px;line-height:1;display:grid;place-items:center;transition:filter .2s}
+.step button[data-gp]{background:var(--gold);color:#07090c}
+.step button[data-gm]{background:var(--green);color:var(--cream)}
+.step button:hover{filter:brightness(1.2)}
+.step span{font-family:'Amiri',serif;font-size:22px;min-width:34px;text-align:center}
+.back{color:var(--muted);display:inline-block;margin:10px 0 24px}
+.shade{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:20}
+.shade.on{display:block}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(400px,100%);background:var(--surface);border-right:1px solid var(--line);z-index:30;transform:translateX(-102%);transition:transform .25s;display:flex;flex-direction:column;padding:calc(20px + env(safe-area-inset-top,0px)) 22px calc(20px + env(safe-area-inset-bottom,0px))}
+.drawer.on{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.dh h2{font-size:26px;margin:0}
+.items{flex:1;overflow:auto}
+.it{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.it h3{font-size:19px}
+.qty{display:flex;align-items:center;gap:10px}
+.qty button{width:28px;height:28px;border:1px solid var(--line)}
+.empty{color:var(--muted);padding:30px 0;text-align:center}
+.send{margin-top:16px;width:100%;background:var(--gold);color:#07090c;padding:12px;font-size:17px}
+.note{margin-top:10px;font-size:14px;color:var(--muted);min-height:22px}
+footer{border-top:1px solid var(--line);padding:40px 0 50px;text-align:center;color:var(--muted)}
+footer .logo{color:var(--cream);display:block;margin-bottom:10px}
+footer a{color:var(--gold)}
+@media (max-width:560px){.hero{padding:40px 0 60px}h2{font-size:28px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="index.html">ORRIS</a>
+    <div class="hbtns">
+      <a href="index.html">الرئيسية</a>
+      <button class="cartbtn" id="openCart" aria-label="السلة">السلة <b id="count">0</b></button>
+    </div>
+  </header>
+  <main>
+    <a class="back" href="index.html">← الرئيسية</a>
+    <h2>العطور</h2>
+    <p class="sub">أضف ما يعجبك إلى السلة ثم أرسل الطلب للاستفسار.</p>
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="grid"></div>
+    <div style="height:60px"></div>
+  </main>
+  <footer>
+    <span class="logo">ORRIS</span>
+    <p>للاستفسار راسلنا على إنستغرام</p>
+    <p><a href="https://www.instagram.com/orris.perfume1" rel="noopener" target="_blank">@orris.perfume1</a></p>
+    <p style="margin-top:22px;font-size:14px">جميع الحقوق محفوظة © 2026 أوريس للعطور | ORRIS PERFUME — جميع الحقوق محفوظة</p>
+  </footer>
+</div>
+<div class="shade" id="shade"></div>
+<aside class="drawer" id="drawer" aria-label="السلة">
+  <div class="dh"><h2>السلة</h2><button id="closeCart" aria-label="إغلاق">✕</button></div>
+  <div class="items" id="items"></div>
+  <button class="send" id="send">إرسال الطلب للاستفسار</button>
+  <p class="note" id="note"></p>
+</aside>
+<script>
+var PRODUCTS=[
+ {id:1,name:"عطر رقم 1",cat:"رجالي"},{id:2,name:"عطر رقم 2",cat:"رجالي"},
+ {id:3,name:"عطر رقم 3",cat:"نسائي"},{id:4,name:"عطر رقم 4",cat:"نسائي"},
+ {id:5,name:"عطر رقم 5",cat:"للجنسين"},{id:6,name:"عطر رقم 6",cat:"للجنسين"},
+ {id:7,name:"طقم هدية 1",cat:"هدايا"},{id:8,name:"طقم هدية 2",cat:"هدايا"}
+];
+var CATS=["الكل","رجالي","نسائي","للجنسين","هدايا"];
+var cat="الكل", cart={};
+try{var s=localStorage.getItem("orris_cart");if(s)cart=JSON.parse(s)||{}}catch(e){}
+function save(){try{localStorage.setItem("orris_cart",JSON.stringify(cart))}catch(e){}}
+function $(i){return document.getElementById(i)}
+function chips(){
+  $("chips").innerHTML=CATS.map(function(c){return '<button class="chip'+(c===cat?' on':'')+'" data-c="'+c+'">'+c+'</button>'}).join("");
+}
+function grid(){
+  $("grid").innerHTML=PRODUCTS.filter(function(p){return cat==="الكل"||p.cat===cat}).map(function(p){
+    return '<div class="card"><div class="bottle"><i></i></div><h3>'+p.name+'</h3><small>'+p.cat+'</small>(cart[p.id]?'<div class="step"><button data-gm="'+p.id+'" aria-label="نقص">−</button><span>'+cart[p.id]+'</span><button data-gp="'+p.id+'" aria-label="زيادة">+</button></div>':'<button class="add" data-id="'+p.id+'">أضف إلى السلة</button>')+'</div>';
+  }).join("");
+}
+$("chips").addEventListener("click",function(e){var c=e.target.getAttribute("data-c");if(c){cat=c;chips();grid()}});
+$("grid").addEventListener("click",function(e){
+  var t=e.target,id=t.getAttribute("data-id"),gp=t.getAttribute("data-gp"),gm=t.getAttribute("data-gm");
+  if(id)cart[id]=1;
+  if(gp)cart[gp]++;
+  if(gm){cart[gm]--;if(cart[gm]<=0)delete cart[gm]}
+  if(id||gp||gm){save();draw()}
+});
+function draw(){
+  var ids=Object.keys(cart),n=0;
+  ids.forEach(function(i){n+=cart[i]});
+  $("count").textContent=n;
+  $("items").innerHTML=ids.length?ids.map(function(i){
+    var p=PRODUCTS.filter(function(x){return String(x.id)===i})[0];if(!p)return"";
+    return '<div class="it"><h3>'+p.name+'</h3><div class="qty"><button data-m="'+i+'" aria-label="نقص">−</button><span>'+cart[i]+'</span><button data-p="'+i+'" aria-label="زيادة">+</button></div></div>';
+  }).join(""):'<p class="empty">السلة فارغة</p>';
+  $("send").style.display=ids.length?"block":"none";
+  grid();
+}
+$("items").addEventListener("click",function(e){
+  var m=e.target.getAttribute("data-m"),p=e.target.getAttribute("data-p");
+  if(m){cart[m]--;if(cart[m]<=0)delete cart[m]}
+  if(p){cart[p]++}
+  save();draw();
+});
+function toggle(v){$("drawer").className="drawer"+(v?" on":"");$("shade").className="shade"+(v?" on":"");$("note").textContent=""}
+$("openCart").onclick=function(){toggle(true)};
+$("closeCart").onclick=$("shade").onclick=function(){toggle(false)};
+$("send").onclick=function(){
+  var t="مرحباً، أريد الاستفسار عن هذه العطور:\n"+Object.keys(cart).map(function(i){
+    var p=PRODUCTS.filter(function(x){return String(x.id)===i})[0];return "- "+p.name+" × "+cart[i]}).join("\n");
+  var done=function(msg){$("note").textContent=msg;window.open("https://www.instagram.com/orris.perfume1","_blank")};
+  try{navigator.clipboard.writeText(t).then(function(){done("تم نسخ الطلب. الصقه في المراسلة.")},function(){done("افتح المراسلة واكتب أسماء العطور.")})}
+  catch(e){done("افتح المراسلة واكتب أسماء العطور.")}
+};
+chips();grid();draw();
+</script>
+</body>
+</html>
