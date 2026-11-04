@@ -728,10 +728,43 @@ const WA_NUM         = '';
 let   currentFilter  = 'all';
 
 // ══ Auth (Supabase Auth: إيميل + كلمة سر) ══
-function showLockError(msg){
+function showLockError(msg, err){
   var e = document.getElementById('lockError');
   e.textContent = msg; e.style.display = 'block';
-  setTimeout(function(){ e.style.display = 'none'; }, 3000);
+  var d = document.getElementById('lockDetails');
+  if(!d){
+    d = document.createElement('pre'); d.id = 'lockDetails';
+    d.style.cssText = 'direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;user-select:text;background:#000;color:#9fe29f;border:1px solid #333;border-radius:8px;padding:10px;margin:10px 0 0;font:12px/1.6 monospace;max-height:220px;overflow:auto';
+    e.parentNode.insertBefore(d, e.nextSibling);
+    var b = document.createElement('button'); b.id = 'lockCopy'; b.type = 'button'; b.textContent = '📋 نسخ تفاصيل الخطأ';
+    b.style.cssText = 'margin-top:6px;padding:6px 12px;border:1px solid #666;border-radius:6px;background:#222;color:#fff;cursor:pointer;font-family:inherit';
+    b.onclick = function(){ var t = d.textContent; try{ navigator.clipboard.writeText(t); b.textContent = '✅ تم النسخ'; }catch(x){ var r = document.createRange(); r.selectNodeContents(d); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } };
+    d.parentNode.insertBefore(b, d.nextSibling);
+  }
+  var b2 = document.getElementById('lockCopy');
+  if(err){
+    var i = err.info || {}, dg = {};
+    try{ dg = OrrisCloud.diag(); }catch(x){ dg = { error:'OrrisCloud غير محمّل — supabase-config.js ما انحمّل' }; }
+    d.textContent =
+      'نوع الخطأ   : ' + (i.kind === 'network' ? 'فشل اتصال (Network/CORS/رابط غلط)' : i.kind === 'http' ? 'رد HTTP من السيرفر' : 'خطأ بالكود (JS)') + '\n' +
+      'الخطوة      : ' + (i.step || '-') + '\n' +
+      'الحالة      : ' + (i.status != null ? i.status : '-') + '\n' +
+      'الرابط      : ' + (i.url || '-') + '\n' +
+      'رد السيرفر  : ' + (i.body || String(err && err.message || err)) + '\n' +
+      '— إعدادات الملف —\n' +
+      'ORRIS_SUPABASE_URL : ' + (dg.url || '-') + '\n' +
+      'رابط placeholder؟  : ' + (dg.urlIsPlaceholder ? 'نعم ← لازم تبدله' : 'لا') + '\n' +
+      'شكل الرابط صحيح؟   : ' + (dg.urlLooksValid ? 'نعم' : 'لا ← لازم يكون https://xxxx.supabase.co بدون / بالآخر') + '\n' +
+      'المفتاح (أول 18)   : ' + (dg.keyStart || '-') + ' (طوله ' + (dg.keyLen || 0) + ')\n' +
+      'الصفحة            : ' + location.href + '\n' +
+      'الوقت             : ' + new Date().toISOString();
+    d.style.display = 'block'; b2.style.display = 'inline-block'; b2.textContent = '📋 نسخ تفاصيل الخطأ';
+    clearTimeout(showLockError._t);   // التفاصيل تبقى ظاهرة
+  }else{
+    d.style.display = 'none'; b2.style.display = 'none';
+    clearTimeout(showLockError._t);
+    showLockError._t = setTimeout(function(){ e.style.display = 'none'; }, 3000);
+  }
 }
 async function checkPass(){
   var email = (document.getElementById('emailInput').value||'').trim();
@@ -739,20 +772,23 @@ async function checkPass(){
   if(!email || !pass){ showLockError('❗ أدخل الإيميل وكلمة السر'); return; }
   var btn = document.getElementById('loginBtn'); btn.disabled = true;
   try{
+    if(!window.OrrisCloud){ showLockError('❌ ملف supabase-config.js ما انحمّل (تأكد إنه بنفس مجلد admin.html)', { info:{ kind:'js', step:'load supabase-config.js', url:new URL('supabase-config.js', location.href).href, status:'-', body:'OrrisCloud undefined' } }); return; }
     try{ await OrrisCloud.signIn(email, pass); }
     catch(e){
       OrrisCloud.signOut();
       var m = String((e && e.message) || e);
+      var st = e && e.info && e.info.status;
       var msg = /confirm/i.test(m) ? '❌ الإيميل غير مؤكد — فعّل Auto Confirm للمستخدم في Supabase'
               : /invalid/i.test(m) ? '❌ الإيميل أو كلمة السر غلط، أو الحساب غير موجود في Supabase'
-              : /fetch|network|load/i.test(m) ? '❌ تعذّر الاتصال بـ Supabase — تأكد من الإنترنت وملف supabase-config.js'
+              : st === 404 ? '❌ خطأ 404 — رابط Supabase بملف supabase-config.js غلط'
+              : (e && e.info && e.info.kind === 'network') ? '❌ تعذّر الاتصال بـ Supabase — الرابط غلط أو الإنترنت'
               : '❌ فشل الدخول: ' + m;
-      showLockError(msg); return;
+      showLockError(msg, e); return;
     }
     var ok;
     try{ ok = await OrrisCloud.rpc('am_i_admin'); }
-    catch(e){ OrrisCloud.signOut(); showLockError('❌ الدخول نجح لكن دالة am_i_admin غير موجودة — شغّل supabase-security.sql في Supabase'); return; }
-    if(ok !== true){ OrrisCloud.signOut(); showLockError('❌ هذا الحساب ليس حساب أدمن (الإيميل ما يطابق is_admin في SQL)'); return; }
+    catch(e){ OrrisCloud.signOut(); showLockError('❌ الدخول نجح لكن فشل فحص الأدمن (am_i_admin) — شغّل orris-core.sql في Supabase', e); return; }
+    if(ok !== true){ OrrisCloud.signOut(); showLockError('❌ هذا الحساب ليس أدمن — الإيميل غير موجود بجدول admins', { info:{ kind:'http', step:'rpc/am_i_admin', status:200, url:'(returned ' + JSON.stringify(ok) + ')', body:'شغّل: insert into public.admins(user_id) select id from auth.users where email = \'' + email.replace(/'/g,'') + '\';' } }); return; }
     enterPanel();
   }finally{
     btn.disabled = false;
