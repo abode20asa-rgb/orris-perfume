@@ -80,6 +80,19 @@ footer .logo{color:var(--cream);display:block;margin-bottom:10px}
 footer a{color:var(--gold)}
 @media (max-width:560px){.hero{padding:40px 0 60px}h2{font-size:28px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.pimg{height:170px;margin-bottom:14px;background:linear-gradient(160deg,var(--green),#0a120a);display:grid;place-items:center;overflow:hidden}
+.pimg img{width:100%;height:100%;object-fit:cover;display:block}
+.badge{display:inline-block;align-self:flex-start;font-size:12px;padding:0 10px;border:1px solid var(--gold);color:var(--gold);margin-bottom:8px}
+.badge.so{border-color:#7a2a2a;color:#ff9a9a}
+.desc{color:var(--muted);font-size:14px;margin-top:4px}
+.price{margin-top:8px;font-size:18px;color:var(--gold)}
+.price s{color:var(--muted);font-size:14px;margin-right:6px}
+.sizes{display:flex;gap:8px;margin-top:10px}
+.sz{flex:1;border:1px solid var(--line);padding:3px 0;text-align:center;color:var(--muted);font-size:14px}
+.sz.on{border-color:var(--gold);color:var(--cream);background:var(--green)}
+.card .add[disabled]{opacity:.45;cursor:not-allowed;border-color:var(--line)}
+.state{color:var(--muted);text-align:center;padding:50px 0}
+.it small{color:var(--muted);display:block;font-size:13px}
 </style>
 </head>
 <body>
@@ -113,42 +126,69 @@ footer a{color:var(--gold)}
   <button class="send" id="send">إرسال الطلب للاستفسار</button>
   <p class="note" id="note"></p>
 </aside>
+<script src="supabase-config.js"></script>
 <script>
-var PRODUCTS=[
- {id:1,name:"عطر رقم 1",cat:"رجالي"},{id:2,name:"عطر رقم 2",cat:"رجالي"},
- {id:3,name:"عطر رقم 3",cat:"نسائي"},{id:4,name:"عطر رقم 4",cat:"نسائي"},
- {id:5,name:"عطر رقم 5",cat:"للجنسين"},{id:6,name:"عطر رقم 6",cat:"للجنسين"},
- {id:7,name:"طقم هدية 1",cat:"هدايا"},{id:8,name:"طقم هدية 2",cat:"هدايا"}
-];
-var CATS=["الكل","رجالي","نسائي","للجنسين","هدايا"];
-var cat="الكل", cart={};
-try{var s=localStorage.getItem("orris_cart");if(s)cart=JSON.parse(s)||{}}catch(e){}
-function save(){try{localStorage.setItem("orris_cart",JSON.stringify(cart))}catch(e){}}
+var PRODUCTS=[], CATS=["الكل"], cat="الكل", cart={}, selSize={}, closed=false;
+try{var s0=localStorage.getItem("orris_cart2");if(s0)cart=JSON.parse(s0)||{}}catch(e){}
+function save(){try{localStorage.setItem("orris_cart2",JSON.stringify(cart))}catch(e){}}
 function $(i){return document.getElementById(i)}
+function esc(t){return String(t==null?"":t).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function num(v){var n=parseFloat(String(v||"").replace(/[^0-9.]/g,""));return isNaN(n)?0:n}
+function fmt(n){return Math.round(n).toLocaleString("en-US")}
+var BADGES={bestseller:"⭐ الأكثر مبيعاً",limited:"🔥 محدود",soldout:"🚫 نفذ"};
+
+// تحويل بيانات اللوحة إلى منتجات للمتجر
+function norm(arr){
+  return (Array.isArray(arr)?arr:[]).filter(function(p){return p&&p.name}).map(function(p,i){
+    var has30=num(p.price30)>0;
+    return {i:i,name:String(p.name),en:p.nameEn||"",cat:p.type||"للجنسين",cur:p.currency||"دينار",
+      p50:num(p.price),o50:num(p.oldPrice),p30:has30?num(p.price30):0,o30:has30?num(p.oldPrice30):0,
+      size50:(p.size||"50ml"),has30:has30,badge:p.badge||"",img:/^(data:image\/|https?:\/\/)/.test(p.image||"")?p.image:"",desc:p.description||""};
+  });
+}
+function size(p){return selSize[p.i]||"50"}
+function priceOf(p,sz){return sz==="30"&&p.has30?p.p30:p.p50}
+function oldOf(p,sz){return sz==="30"&&p.has30?p.o30:p.o50}
+function key(p,sz){return p.name+"||"+(p.has30?sz:"50")}
+
 function chips(){
-  $("chips").innerHTML=CATS.map(function(c){return '<button class="chip'+(c===cat?' on':'')+'" data-c="'+c+'">'+c+'</button>'}).join("");
+  $("chips").innerHTML=CATS.map(function(c){return '<button class="chip'+(c===cat?' on':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join("");
 }
 function grid(){
-  $("grid").innerHTML=PRODUCTS.filter(function(p){return cat==="الكل"||p.cat===cat}).map(function(p){
-    return '<div class="card"><div class="bottle"><i></i></div><h3>'+p.name+'</h3><small>'+p.cat+'</small>(cart[p.id]?'<div class="step"><button data-gm="'+p.id+'" aria-label="نقص">−</button><span>'+cart[p.id]+'</span><button data-gp="'+p.id+'" aria-label="زيادة">+</button></div>':'<button class="add" data-id="'+p.id+'">أضف إلى السلة</button>')+'</div>';
+  if(closed){$("grid").innerHTML='<p class="state" style="grid-column:1/-1">المتجر مغلق حالياً، نعود قريباً 🌿</p>';return}
+  var list=PRODUCTS.filter(function(p){return cat==="الكل"||p.cat===cat});
+  if(!list.length){$("grid").innerHTML='<p class="state" style="grid-column:1/-1">لا توجد عطور حالياً.</p>';return}
+  $("grid").innerHTML=list.map(function(p){
+    var sz=size(p),k=key(p,sz),pr=priceOf(p,sz),old=oldOf(p,sz),so=p.badge==="soldout";
+    var img=p.img?'<div class="pimg"><img src="'+esc(p.img)+'" alt="'+esc(p.name)+'" loading="lazy"></div>':'<div class="bottle"><i></i></div>';
+    var bd=BADGES[p.badge]?'<span class="badge'+(so?' so':'')+'">'+BADGES[p.badge]+'</span>':'';
+    var sizes=p.has30?'<div class="sizes"><button class="sz'+(sz==="50"?' on':'')+'" data-sz="50" data-i="'+p.i+'">'+esc(p.size50)+'</button><button class="sz'+(sz==="30"?' on':'')+'" data-sz="30" data-i="'+p.i+'">30ml</button></div>':'';
+    var price=pr?'<div class="price">'+(old>pr?'<s>'+fmt(old)+'</s>':'')+fmt(pr)+' '+esc(p.cur)+'</div>':'';
+    var act=so?'<button class="add" disabled>نفذ</button>':(cart[k]?'<div class="step"><button data-gm="'+esc(k)+'" aria-label="نقص">−</button><span>'+cart[k]+'</span><button data-gp="'+esc(k)+'" aria-label="زيادة">+</button></div>':'<button class="add" data-add="'+p.i+'">أضف إلى السلة</button>');
+    return '<div class="card">'+img+bd+'<h3>'+esc(p.name)+'</h3>'+(p.en?'<small style="direction:ltr;text-align:right">'+esc(p.en)+'</small>':'')+'<small>'+esc(p.cat)+'</small>'+(p.desc?'<p class="desc">'+esc(p.desc)+'</p>':'')+sizes+price+act+'</div>';
   }).join("");
 }
+function find(k){var n=k.split("||")[0];return PRODUCTS.filter(function(x){return x.name===n})[0]}
 $("chips").addEventListener("click",function(e){var c=e.target.getAttribute("data-c");if(c){cat=c;chips();grid()}});
 $("grid").addEventListener("click",function(e){
-  var t=e.target,id=t.getAttribute("data-id"),gp=t.getAttribute("data-gp"),gm=t.getAttribute("data-gm");
-  if(id)cart[id]=1;
+  var t=e.target,a=t.getAttribute("data-add"),gp=t.getAttribute("data-gp"),gm=t.getAttribute("data-gm"),z=t.getAttribute("data-sz");
+  if(z){selSize[t.getAttribute("data-i")]=z;grid();return}
+  if(a!==null){var p=PRODUCTS[a];if(p)cart[key(p,size(p))]=1}
   if(gp)cart[gp]++;
   if(gm){cart[gm]--;if(cart[gm]<=0)delete cart[gm]}
-  if(id||gp||gm){save();draw()}
+  if(a!==null||gp||gm){save();draw()}
 });
 function draw(){
-  var ids=Object.keys(cart),n=0;
-  ids.forEach(function(i){n+=cart[i]});
+  // نظّف السلة من عطور انحذفت
+  if(PRODUCTS.length){Object.keys(cart).forEach(function(k){if(!find(k))delete cart[k]});save()}
+  var ids=Object.keys(cart),n=0,total=0,cur="";
+  ids.forEach(function(k){n+=cart[k]});
   $("count").textContent=n;
-  $("items").innerHTML=ids.length?ids.map(function(i){
-    var p=PRODUCTS.filter(function(x){return String(x.id)===i})[0];if(!p)return"";
-    return '<div class="it"><h3>'+p.name+'</h3><div class="qty"><button data-m="'+i+'" aria-label="نقص">−</button><span>'+cart[i]+'</span><button data-p="'+i+'" aria-label="زيادة">+</button></div></div>';
-  }).join(""):'<p class="empty">السلة فارغة</p>';
+  $("items").innerHTML=ids.length?ids.map(function(k){
+    var p=find(k);if(!p)return"";
+    var sz=k.split("||")[1],pr=priceOf(p,sz);total+=pr*cart[k];cur=p.cur;
+    return '<div class="it"><div><h3>'+esc(p.name)+'</h3><small>'+(p.has30?(sz==="30"?"30ml":esc(p.size50)):"")+(pr?' · '+fmt(pr)+' '+esc(p.cur):'')+'</small></div><div class="qty"><button data-m="'+esc(k)+'" aria-label="نقص">−</button><span>'+cart[k]+'</span><button data-p="'+esc(k)+'" aria-label="زيادة">+</button></div></div>';
+  }).join("")+(total?'<p class="note" style="color:var(--cream)">المجموع: '+fmt(total)+' '+esc(cur)+'</p>':''):'<p class="empty">السلة فارغة</p>';
   $("send").style.display=ids.length?"block":"none";
   grid();
 }
@@ -162,13 +202,56 @@ function toggle(v){$("drawer").className="drawer"+(v?" on":"");$("shade").classN
 $("openCart").onclick=function(){toggle(true)};
 $("closeCart").onclick=$("shade").onclick=function(){toggle(false)};
 $("send").onclick=function(){
-  var t="مرحباً، أريد الاستفسار عن هذه العطور:\n"+Object.keys(cart).map(function(i){
-    var p=PRODUCTS.filter(function(x){return String(x.id)===i})[0];return "- "+p.name+" × "+cart[i]}).join("\n");
+  var t="مرحباً، أريد الاستفسار عن هذه العطور:\n"+Object.keys(cart).map(function(k){
+    var p=find(k);if(!p)return"";var sz=k.split("||")[1],pr=priceOf(p,sz);
+    return "- "+p.name+(p.has30?" ("+(sz==="30"?"30ml":p.size50)+")":"")+" × "+cart[k]+(pr?" — "+fmt(pr*cart[k])+" "+p.cur:"")}).filter(Boolean).join("\n");
   var done=function(msg){$("note").textContent=msg;window.open("https://www.instagram.com/orris.perfume1","_blank")};
   try{navigator.clipboard.writeText(t).then(function(){done("تم نسخ الطلب. الصقه في المراسلة.")},function(){done("افتح المراسلة واكتب أسماء العطور.")})}
   catch(e){done("افتح المراسلة واكتب أسماء العطور.")}
 };
-chips();grid();draw();
+
+// ══ تحميل العطور من Supabase ══
+function loadCache(){try{return JSON.parse(localStorage.getItem("orris_shop_cache")||"null")}catch(e){return null}}
+function setCats(sec){
+  var seen={};PRODUCTS.forEach(function(p){seen[p.cat]=1});
+  CATS=["الكل"].concat(["رجالي","نسائي","للجنسين"].filter(function(c){
+    if(!seen[c])return false;
+    if(c==="رجالي"&&sec&&sec.men===false)return false;
+    if(c==="نسائي"&&sec&&sec.women===false)return false;
+    return true}));
+  if(CATS.indexOf(cat)<0)cat="الكل";
+}
+function visible(sec){
+  return PRODUCTS.filter(function(p){
+    if(sec&&sec.men===false&&p.cat==="رجالي")return false;
+    if(sec&&sec.women===false&&p.cat==="نسائي")return false;
+    return true});
+}
+function apply(arr,sec){
+  PRODUCTS=norm(arr);
+  PRODUCTS=visible(sec).map(function(p,i){p.i=i;return p});
+  setCats(sec);chips();draw();
+}
+async function init(){
+  $("grid").innerHTML='<p class="state" style="grid-column:1/-1">جارٍ تحميل العطور…</p>';
+  var cached=loadCache();
+  if(cached&&cached.length)apply(cached,null);
+  if(!window.OrrisCloud){ if(!cached)$("grid").innerHTML='<p class="state" style="grid-column:1/-1">تعذّر تحميل العطور (supabase-config.js غير موجود).</p>'; return }
+  try{
+    var r=await Promise.all([
+      OrrisCloud.rpc("public_perfumes"),
+      OrrisCloud.rpc("site_is_open").catch(function(){return true}),
+      OrrisCloud.rpc("site_sections").catch(function(){return null})
+    ]);
+    closed=(r[1]===false);
+    try{localStorage.setItem("orris_shop_cache",JSON.stringify(r[0]||[]))}catch(e){}
+    apply(r[0],r[2]&&typeof r[2]==="object"?r[2]:null);
+  }catch(e){
+    if(!cached)$("grid").innerHTML='<p class="state" style="grid-column:1/-1">تعذّر تحميل العطور. حاول لاحقاً.</p>';
+    if(window.console)console.warn("ORRIS shop:",e&&e.message,e&&e.info);
+  }
+}
+chips();draw();init();
 </script>
 </body>
 </html>
