@@ -72,6 +72,24 @@ h2{font-size:34px;margin-bottom:8px}
 footer{border-top:1px solid var(--line);padding:40px 0 50px;text-align:center;color:var(--muted)}
 footer .logo{color:var(--cream);display:block;margin-bottom:10px}
 footer a{color:var(--gold)}
+.rvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-bottom:34px}
+.rv{background:var(--surface);border:1px solid var(--line);padding:18px 18px 16px}
+.rv b{font-family:'Amiri',serif;font-weight:400;font-size:19px;display:block;margin-bottom:4px;color:var(--gold)}
+.rv p{color:var(--cream);font-size:15px;word-break:break-word}
+.rvempty{color:var(--muted);text-align:center;padding:10px 0 30px;grid-column:1/-1}
+.rvform{max-width:520px;margin:0 auto;background:var(--surface);border:1px solid var(--line);padding:22px}
+.rvform h3{font-size:24px;margin-bottom:12px}
+.rvform input[type=text],.rvform textarea{width:100%;background:var(--bg);color:var(--cream);border:1px solid var(--line);padding:10px 12px;font:inherit;margin-bottom:12px;border-radius:2px}
+.rvform input:focus,.rvform textarea:focus{outline:none;border-color:var(--gold)}
+.rvform textarea{min-height:96px;resize:vertical}
+.gsel{display:flex;gap:10px;margin-bottom:12px}
+.gsel button{flex:1;border:1px solid var(--line);padding:8px;color:var(--muted);transition:border-color .2s,background .2s}
+.gsel button.on{border-color:var(--gold);color:var(--cream);background:var(--green)}
+.rvform .send{width:100%;background:var(--gold);color:#07090c;padding:11px;font-size:17px;margin-top:0}
+.rvform .send[disabled]{opacity:.5;cursor:wait}
+.rvmsg{margin-top:12px;font-size:15px;min-height:22px;color:var(--muted)}
+.rvmsg.ok{color:#9fe29f}.rvmsg.bad{color:#ff9a9a}
+.cnt{color:var(--muted);font-size:13px;text-align:left;margin:-8px 0 10px}
 @media (max-width:560px){.hero{padding:40px 0 60px}h2{font-size:28px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -97,6 +115,20 @@ footer a{color:var(--gold)}
         <div><h3>طلب سهل</h3><p>تضيف عطورك للسلة وترسل الطلب للاستفسار.</p></div>
       </div>
     </section>
+    <section id="reviews">
+      <h2>آراء الزبائن</h2>
+      <p class="sub">شاركنا رأيك بعد التجربة.</p>
+      <div class="rvgrid" id="rvList"><p class="rvempty">جارٍ التحميل…</p></div>
+      <div class="rvform">
+        <h3>أضف رأيك</h3>
+        <input type="text" id="rvName" maxlength="20" placeholder="اسمك (الاسم الأول فقط)" autocomplete="off">
+        <div class="gsel" id="rvGender"><button type="button" data-g="girl">👩 أنثى</button><button type="button" data-g="man">👨 ذكر</button></div>
+        <textarea id="rvBody" maxlength="300" placeholder="اكتب رأيك هنا…"></textarea>
+        <div class="cnt"><span id="rvCnt">0</span>/300</div>
+        <button type="button" class="send" id="rvSend">إرسال الرأي</button>
+        <p class="rvmsg" id="rvMsg" role="status" aria-live="polite"></p>
+      </div>
+    </section>
   </main>
   <footer>
     <span class="logo">ORRIS</span>
@@ -105,5 +137,60 @@ footer a{color:var(--gold)}
     <p style="margin-top:22px;font-size:14px">جميع الحقوق محفوظة © 2026 أوريس للعطور | ORRIS PERFUME — جميع الحقوق محفوظة</p>
   </footer>
 </div>
+<script src="supabase-config.js"></script>
+<script src="orris-review-notice.js"></script>
+<script>
+(function(){
+  var TK='orris_rv_tokens', gender='';
+  function $(i){return document.getElementById(i)}
+  function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function tokens(){try{var a=JSON.parse(localStorage.getItem(TK)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
+  function addToken(t){var a=tokens();a.push(t);try{localStorage.setItem(TK,JSON.stringify(a.slice(-20)))}catch(e){}}
+  function newToken(){
+    var b=new Uint8Array(16);
+    try{crypto.getRandomValues(b)}catch(e){for(var i=0;i<16;i++)b[i]=Math.floor(Math.random()*256)}
+    return Array.prototype.map.call(b,function(x){return('0'+x.toString(16)).slice(-2)}).join('');
+  }
+  function msg(t,c){var m=$('rvMsg');m.textContent=t;m.className='rvmsg'+(c?' '+c:'')}
+  var ERR={name:'اكتب اسمك.',gender:'اختر أنثى أو ذكر.',body:'الرأي لازم يكون بين 3 و300 حرف.',link:'ممنوع وضع روابط بالرأي.',busy:'عدد الآراء كثير حالياً، حاول بعد قليل.'};
+
+  function load(){
+    if(!window.OrrisCloud){$('rvList').innerHTML='<p class="rvempty">تعذّر تحميل الآراء.</p>';return}
+    OrrisCloud.rpc('approved_reviews').then(function(rows){
+      if(!Array.isArray(rows)||!rows.length){$('rvList').innerHTML='<p class="rvempty">كن أول من يكتب رأيه 🌿</p>';return}
+      $('rvList').innerHTML=rows.map(function(r){
+        return '<div class="rv"><b>'+(r.gender==='man'?'👨 ':'👩 ')+esc(r.name)+'</b><p>'+esc(r.body)+'</p></div>';
+      }).join('');
+    }).catch(function(e){
+      $('rvList').innerHTML='<p class="rvempty">تعذّر تحميل الآراء.</p>';
+      if(window.console)console.warn('ORRIS reviews:',e&&e.message,e&&e.info);
+    });
+  }
+  $('rvGender').addEventListener('click',function(e){
+    var g=e.target.getAttribute('data-g');if(!g)return;gender=g;
+    Array.prototype.forEach.call(this.children,function(b){b.className=b.getAttribute('data-g')===g?'on':''});
+  });
+  $('rvBody').addEventListener('input',function(){$('rvCnt').textContent=this.value.length});
+  $('rvSend').onclick=function(){
+    var name=$('rvName').value.trim(),body=$('rvBody').value.trim();
+    if(!name)return msg(ERR.name,'bad');
+    if(!gender)return msg(ERR.gender,'bad');
+    if(body.length<3)return msg(ERR.body,'bad');
+    if(!window.OrrisCloud)return msg('تعذّر الإرسال حالياً.','bad');
+    var btn=this,tk=newToken();btn.disabled=true;msg('جارٍ الإرسال…');
+    OrrisCloud.rpc('submit_review',{p_name:name,p_body:body,p_gender:gender,p_token:tk}).then(function(r){
+      if(!r||!r.ok){msg(ERR[r&&r.error]||'تعذّر إرسال الرأي.','bad');return}
+      if(r.status==='approved'){msg('🎉 تم نشر رأيك، شكراً لك!','ok');load()}
+      else if(r.status==='rejected'){msg('عذراً، رأيك لم يُنشر. السبب: '+(r.reason||'غير محدد'),'bad')}
+      else{addToken(tk);msg('وصلنا رأيك وهو قيد المراجعة، وراح نبلغك بالنتيجة عند زيارتك القادمة 🌿','ok')}
+      $('rvBody').value='';$('rvCnt').textContent='0';
+    }).catch(function(e){
+      msg('تعذّر إرسال الرأي، حاول لاحقاً.','bad');
+      if(window.console)console.warn('ORRIS submit_review:',e&&e.message,e&&e.info);
+    }).then(function(){btn.disabled=false});
+  };
+  load();
+})();
+</script>
 </body>
 </html>
