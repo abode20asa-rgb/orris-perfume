@@ -92,6 +92,25 @@ footer a{color:var(--gold)}
 .sz.on{border-color:var(--gold);color:var(--cream);background:var(--green)}
 .card .add[disabled]{opacity:.45;cursor:not-allowed;border-color:var(--line)}
 .state{color:var(--muted);text-align:center;padding:50px 0}
+.szbtn{margin-top:10px;width:100%;border:1px dashed var(--gold);padding:7px;color:var(--cream);transition:background .2s}
+.szbtn:hover{background:var(--green)}
+.szbtn.set{border-style:solid;background:var(--green)}
+.szbtn.err{border-color:#ff6b6b;animation:shk .3s}
+.szerr{color:#ff9a9a;font-size:13px;min-height:0;margin-top:6px}
+@keyframes shk{25%{transform:translateX(5px)}75%{transform:translateX(-5px)}}
+#szModal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px}
+#szModal.on{display:flex}
+#szModal .box{background:var(--surface);border:1px solid var(--gold);width:min(340px,100%);padding:22px 20px 18px;border-radius:4px}
+#szModal h3{font-size:22px;margin-bottom:2px}
+#szModal .hint{color:var(--muted);font-size:14px;margin-bottom:14px}
+.szopt{display:flex;justify-content:space-between;align-items:center;width:100%;border:1px solid var(--line);padding:12px 14px;margin-bottom:10px;border-radius:2px;transition:border-color .2s,background .2s}
+.szopt:hover{border-color:var(--gold)}
+.szopt.on{border-color:var(--gold);background:var(--green)}
+.szopt s{color:var(--muted);font-size:13px;margin-left:6px}
+.szopt b{font-weight:400;color:var(--gold)}
+#szDone{width:100%;margin-top:6px;background:var(--gold);color:#07090c;padding:11px;font-size:17px}
+#szDone[disabled]{opacity:.4;cursor:not-allowed}
+#szClose{margin-top:8px;width:100%;color:var(--muted);padding:6px}
 .it small{color:var(--muted);display:block;font-size:13px}
 </style>
 </head>
@@ -119,6 +138,7 @@ footer a{color:var(--gold)}
     <p style="margin-top:22px;font-size:14px">جميع الحقوق محفوظة © 2026 أوريس للعطور | ORRIS PERFUME — جميع الحقوق محفوظة</p>
   </footer>
 </div>
+<div id="szModal" role="dialog" aria-modal="true" aria-label="نوع الحجم"><div class="box"><h3 id="szTitle"></h3><p class="hint">اختر الحجم ثم اضغط «تم» للحفظ</p><div id="szOpts"></div><button id="szDone" disabled>تم</button><button id="szClose">إلغاء</button></div></div>
 <div class="shade" id="shade"></div>
 <aside class="drawer" id="drawer" aria-label="السلة">
   <div class="dh"><h2>السلة</h2><button id="closeCart" aria-label="إغلاق">✕</button></div>
@@ -140,17 +160,25 @@ var BADGES={bestseller:"⭐ الأكثر مبيعاً",limited:"🔥 محدود"
 // تحويل بيانات اللوحة إلى منتجات للمتجر
 function norm(arr){
   return (Array.isArray(arr)?arr:[]).filter(function(p){return p&&p.name}).map(function(p,i){
-    var has30=num(p.price30)>0;
-    return {i:i,name:String(p.name),en:p.nameEn||"",cat:p.type||"للجنسين",cur:p.currency||"دينار",
-      p50:num(p.price),o50:num(p.oldPrice),p30:has30?num(p.price30):0,o30:has30?num(p.oldPrice30):0,
-      size50:(p.size||"50ml"),has30:has30,badge:p.badge||"",img:/^(data:image\/|https?:\/\/)/.test(p.image||"")?p.image:"",desc:p.description||""};
+    var sz=[];
+    if(Array.isArray(p.sizes)&&p.sizes.length){
+      p.sizes.forEach(function(x){if(x&&x.size)sz.push({label:String(x.size),price:num(x.price),old:num(x.oldPrice)})});
+    }else{   // عطور محفوظة بالطريقة القديمة
+      if(p.size||num(p.price))sz.push({label:String(p.size||"50ml"),price:num(p.price),old:num(p.oldPrice)});
+      if(num(p.price30)>0)sz.push({label:"30ml",price:num(p.price30),old:num(p.oldPrice30)});
+    }
+    if(!sz.length)sz.push({label:"50ml",price:0,old:0});
+    return {i:i,name:String(p.name),en:p.nameEn||"",cat:p.type||"للجنسين",cur:p.currency||"دينار",sz:sz,
+      badge:p.badge||"",img:/^(data:image\/|https?:\/\/)/.test(p.image||"")?p.image:"",desc:p.description||""};
   });
 }
-function size(p){return selSize[p.i]||"50"}
-function priceOf(p,sz){return sz==="30"&&p.has30?p.p30:p.p50}
-function oldOf(p,sz){return sz==="30"&&p.has30?p.o30:p.o50}
-function key(p,sz){return p.name+"||"+(p.has30?sz:"50")}
-
+function size(p){return selSize[p.i]||""}
+function sizesOf(p){return p.sz.map(function(x){return {v:x.label,label:x.label,price:x.price,old:x.old}})}
+function entry(p,sz){return p.sz.filter(function(x){return x.label===sz})[0]}
+function labelOf(p,sz){var e=entry(p,sz);return e?e.label:""}
+function priceOf(p,sz){var e=entry(p,sz);return e?e.price:(p.sz[0]?p.sz[0].price:0)}
+function oldOf(p,sz){var e=entry(p,sz);return e?e.old:(p.sz[0]?p.sz[0].old:0)}
+function key(p,sz){return p.name+"||"+sz}
 function chips(){
   $("chips").innerHTML=CATS.map(function(c){return '<button class="chip'+(c===cat?' on':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join("");
 }
@@ -162,32 +190,58 @@ function grid(){
     var sz=size(p),k=key(p,sz),pr=priceOf(p,sz),old=oldOf(p,sz),so=p.badge==="soldout";
     var img=p.img?'<div class="pimg"><img src="'+esc(p.img)+'" alt="'+esc(p.name)+'" loading="lazy"></div>':'<div class="bottle"><i></i></div>';
     var bd=BADGES[p.badge]?'<span class="badge'+(so?' so':'')+'">'+BADGES[p.badge]+'</span>':'';
-    var sizes=p.has30?'<div class="sizes"><button class="sz'+(sz==="50"?' on':'')+'" data-sz="50" data-i="'+p.i+'">'+esc(p.size50)+'</button><button class="sz'+(sz==="30"?' on':'')+'" data-sz="30" data-i="'+p.i+'">30ml</button></div>':'';
+    var sizes='<button class="szbtn'+(sz?' set':'')+'" data-szopen="'+p.i+'">'+(sz?'الحجم: '+esc(labelOf(p,sz))+' ✓ (تغيير)':'نوع الحجم')+'</button>';
     var price=pr?'<div class="price">'+(old>pr?'<s>'+fmt(old)+'</s>':'')+fmt(pr)+' '+esc(p.cur)+'</div>':'';
-    var act=so?'<button class="add" disabled>نفذ</button>':(cart[k]?'<div class="step"><button data-gm="'+esc(k)+'" aria-label="نقص">−</button><span>'+cart[k]+'</span><button data-gp="'+esc(k)+'" aria-label="زيادة">+</button></div>':'<button class="add" data-add="'+p.i+'">أضف إلى السلة</button>');
-    return '<div class="card">'+img+bd+'<h3>'+esc(p.name)+'</h3>'+(p.en?'<small style="direction:ltr;text-align:right">'+esc(p.en)+'</small>':'')+'<small>'+esc(p.cat)+'</small>'+(p.desc?'<p class="desc">'+esc(p.desc)+'</p>':'')+sizes+price+act+'</div>';
+    var act=so?'<button class="add" disabled>نفذ</button>':(sz&&cart[k]?'<div class="step"><button data-gm="'+esc(k)+'" aria-label="نقص">−</button><span>'+cart[k]+'</span><button data-gp="'+esc(k)+'" aria-label="زيادة">+</button></div>':'<button class="add" data-add="'+p.i+'">أضف إلى السلة</button>');
+    return '<div class="card">'+img+bd+'<h3>'+esc(p.name)+'</h3>'+(p.en?'<small style="direction:ltr;text-align:right">'+esc(p.en)+'</small>':'')+'<small>'+esc(p.cat)+'</small>'+(p.desc?'<p class="desc">'+esc(p.desc)+'</p>':'')+price+(so?'':sizes+'<div class="szerr"></div>')+act+'</div>';
   }).join("");
 }
 function find(k){var n=k.split("||")[0];return PRODUCTS.filter(function(x){return x.name===n})[0]}
 $("chips").addEventListener("click",function(e){var c=e.target.getAttribute("data-c");if(c){cat=c;chips();grid()}});
 $("grid").addEventListener("click",function(e){
-  var t=e.target,a=t.getAttribute("data-add"),gp=t.getAttribute("data-gp"),gm=t.getAttribute("data-gm"),z=t.getAttribute("data-sz");
-  if(z){selSize[t.getAttribute("data-i")]=z;grid();return}
-  if(a!==null){var p=PRODUCTS[a];if(p)cart[key(p,size(p))]=1}
+  var t=e.target,a=t.getAttribute("data-add"),gp=t.getAttribute("data-gp"),gm=t.getAttribute("data-gm"),o=t.getAttribute("data-szopen");
+  if(o!==null){openSz(+o);return}
+  if(a!==null){
+    var p=PRODUCTS[a];if(!p)return;
+    if(!size(p)){
+      var card=t.closest(".card"),er=card&&card.querySelector(".szerr"),b=card&&card.querySelector(".szbtn");
+      if(er)er.textContent="⚠️ اختر نوع الحجم أولاً";
+      if(b){b.classList.remove("err");void b.offsetWidth;b.classList.add("err")}
+      return;
+    }
+    cart[key(p,size(p))]=1;
+  }
   if(gp)cart[gp]++;
   if(gm){cart[gm]--;if(cart[gm]<=0)delete cart[gm]}
   if(a!==null||gp||gm){save();draw()}
 });
+// ══ نافذة نوع الحجم ══
+var szCur=-1,szTmp="";
+function renderSz(){
+  var p=PRODUCTS[szCur];if(!p)return;
+  $("szTitle").textContent=p.name;
+  $("szOpts").innerHTML=sizesOf(p).map(function(x){
+    return '<button class="szopt'+(szTmp===x.v?' on':'')+'" data-v="'+x.v+'"><span>'+esc(x.label)+(szTmp===x.v?' ✓':'')+'</span><span>'+(x.old>x.price&&x.price?'<s>'+fmt(x.old)+'</s>':'')+(x.price?'<b>'+fmt(x.price)+' '+esc(p.cur)+'</b>':'')+'</span></button>';
+  }).join("");
+  $("szDone").disabled=!szTmp;
+}
+function openSz(i){szCur=i;szTmp=selSize[i]||"";renderSz();$("szModal").className="on"}
+function closeSz(){$("szModal").className="";szCur=-1;szTmp=""}   // الإغلاق بدون «تم» = ما ينحفظ شي
+$("szOpts").addEventListener("click",function(e){var b=e.target.closest(".szopt");if(!b)return;szTmp=b.getAttribute("data-v");renderSz()});
+$("szDone").onclick=function(){if(!szTmp||szCur<0)return;selSize[szCur]=szTmp;closeSz();grid()};
+$("szClose").onclick=closeSz;
+$("szModal").addEventListener("click",function(e){if(e.target===this)closeSz()});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSz()});
 function draw(){
   // نظّف السلة من عطور انحذفت
-  if(PRODUCTS.length){Object.keys(cart).forEach(function(k){if(!find(k))delete cart[k]});save()}
+  if(PRODUCTS.length){Object.keys(cart).forEach(function(k){var p=find(k);if(!p||!entry(p,k.split("||")[1]))delete cart[k]});save()}
   var ids=Object.keys(cart),n=0,total=0,cur="";
   ids.forEach(function(k){n+=cart[k]});
   $("count").textContent=n;
   $("items").innerHTML=ids.length?ids.map(function(k){
     var p=find(k);if(!p)return"";
     var sz=k.split("||")[1],pr=priceOf(p,sz);total+=pr*cart[k];cur=p.cur;
-    return '<div class="it"><div><h3>'+esc(p.name)+'</h3><small>'+(p.has30?(sz==="30"?"30ml":esc(p.size50)):"")+(pr?' · '+fmt(pr)+' '+esc(p.cur):'')+'</small></div><div class="qty"><button data-m="'+esc(k)+'" aria-label="نقص">−</button><span>'+cart[k]+'</span><button data-p="'+esc(k)+'" aria-label="زيادة">+</button></div></div>';
+    return '<div class="it"><div><h3>'+esc(p.name)+'</h3><small>'+esc(labelOf(p,sz))+(pr?' · '+fmt(pr)+' '+esc(p.cur):'')+'</small></div><div class="qty"><button data-m="'+esc(k)+'" aria-label="نقص">−</button><span>'+cart[k]+'</span><button data-p="'+esc(k)+'" aria-label="زيادة">+</button></div></div>';
   }).join("")+(total?'<p class="note" style="color:var(--cream)">المجموع: '+fmt(total)+' '+esc(cur)+'</p>':''):'<p class="empty">السلة فارغة</p>';
   $("send").style.display=ids.length?"block":"none";
   grid();
@@ -204,7 +258,7 @@ $("closeCart").onclick=$("shade").onclick=function(){toggle(false)};
 $("send").onclick=function(){
   var t="مرحباً، أريد الاستفسار عن هذه العطور:\n"+Object.keys(cart).map(function(k){
     var p=find(k);if(!p)return"";var sz=k.split("||")[1],pr=priceOf(p,sz);
-    return "- "+p.name+(p.has30?" ("+(sz==="30"?"30ml":p.size50)+")":"")+" × "+cart[k]+(pr?" — "+fmt(pr*cart[k])+" "+p.cur:"")}).filter(Boolean).join("\n");
+    return "- "+p.name+" ("+labelOf(p,sz)+")"+" × "+cart[k]+(pr?" — "+fmt(pr*cart[k])+" "+p.cur:"")}).filter(Boolean).join("\n");
   var done=function(msg){$("note").textContent=msg;window.open("https://www.instagram.com/orris.perfume1","_blank")};
   try{navigator.clipboard.writeText(t).then(function(){done("تم نسخ الطلب. الصقه في المراسلة.")},function(){done("افتح المراسلة واكتب أسماء العطور.")})}
   catch(e){done("افتح المراسلة واكتب أسماء العطور.")}
