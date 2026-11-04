@@ -1,8 +1,9 @@
 /* ORRIS — إعداد الاتصال بـ Supabase
-   1) بدّل القيمتين تحت برابط مشروعك ومفتاح anon public (مو service_role أبداً)
-   2) ضع هذا الملف بجانب admin.html */
+   1) بدّل رابط المشروع تحت (Project Settings → API → Project URL)
+   2) المفتاح تحت هو publishable (آمن للمتصفح). لا تحط sb_secret هنا أبداً
+   3) ضع هذا الملف بجانب admin.html */
 window.ORRIS_SUPABASE_URL = 'PASTE_PROJECT_URL_HERE';   // مثل https://abcdxyz.supabase.co
-window.ORRIS_SUPABASE_KEY = 'PASTE_ANON_PUBLIC_KEY_HERE';
+window.ORRIS_SUPABASE_KEY = 'sb_publishable_9zWNDk9PJgj3OCCl4IlEvQ_dzGcDNQ0';
 
 (function(){
   var BASE = String(window.ORRIS_SUPABASE_URL).replace(/\/+$/,'');
@@ -31,7 +32,9 @@ window.ORRIS_SUPABASE_KEY = 'PASTE_ANON_PUBLIC_KEY_HERE';
 
   async function req(method, path, body, extra){
     var t = await token();
-    var h = { apikey:KEY, Authorization:'Bearer ' + (t || KEY), 'Content-Type':'application/json' };
+    // المفتاح الجديد (sb_publishable) مو JWT، فنرسل Authorization فقط لما يكون فيه جلسة
+    var h = { apikey:KEY, 'Content-Type':'application/json' };
+    if(t) h.Authorization = 'Bearer ' + t;
     if(extra) for(var k in extra) h[k] = extra[k];
     var r = await fetch(BASE + '/rest/v1/' + path, { method:method, headers:h, body: body===undefined ? undefined : JSON.stringify(body) });
     var txt = await r.text(), d = null;
