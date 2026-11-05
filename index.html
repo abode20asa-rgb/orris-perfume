@@ -124,6 +124,20 @@ footer a{color:var(--gold)}
   function normPhone(v){var d=String(v||'').replace(/[^0-9]/g,'');if(/^9647\d{9}$/.test(d))return '0'+d.slice(3);if(/^07\d{9}$/.test(d))return d;if(/^7\d{9}$/.test(d))return '0'+d;return null}
   function rpc(n,a){if(!window.OrrisCloud)return Promise.reject(new Error('no cloud'));return OrrisCloud.rpc(n,a)}
 
+  // ══ التحقق من حالة الموقع ══
+  async function checkSiteStatus(){
+    try{
+      if(!window.OrrisCloud) return;
+      var isOpen = await OrrisCloud.rpc('site_is_open').catch(function(){ return true; });
+      if(isOpen === false){
+        var main = document.querySelector('main');
+        if(main){
+          main.innerHTML = '<div style="text-align:center;padding:80px 20px"><div style="font-size:3rem;margin-bottom:20px">🔒</div><h1 style="font-size:2rem;margin-bottom:10px">الموقع مغلق مؤقتاً</h1><p style="color:var(--muted,#a9a592);font-size:1.1rem">يرجى المحاولة لاحقاً</p></div>';
+        }
+      }
+    }catch(e){}
+  }
+
   /* ───────── CSS ───────── */
   var css='header.topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 0;gap:10px}'+
   'header.topbar .logo{justify-self:center;padding-left:.35em;white-space:nowrap}'+
@@ -203,6 +217,7 @@ footer a{color:var(--gold)}
   function closeModal(){modal.classList.remove('on');if(onClose){try{onClose()}catch(e){}onClose=null}}
 
   function init(){
+    checkSiteStatus();
     btn=$('menuBtn');if(!btn)return;
     document.body.appendChild(back);document.body.appendChild(panel);document.body.appendChild(modal);
     if(!$('menuDot')){var d=document.createElement('i');d.className='mdot';d.id='menuDot';btn.appendChild(d)}

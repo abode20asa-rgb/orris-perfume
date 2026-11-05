@@ -731,18 +731,13 @@ function sparks(){
 function loadCache(){try{return JSON.parse(localStorage.getItem("orris_shop_cache")||"null")}catch(e){return null}}
 function setCats(sec){
   var seen={};PRODUCTS.forEach(function(p){seen[p.cat]=1});
-  CATS=["الكل"].concat(["رجالي","نسائي","للجنسين"].filter(function(c){
+  CATS=["الكل"].concat(["للجنسين"].filter(function(c){
     if(!seen[c])return false;
-    if(c==="رجالي"&&sec&&sec.men===false)return false;
-    if(c==="نسائي"&&sec&&sec.women===false)return false;
     return true}));
   if(CATS.indexOf(cat)<0)cat="الكل";
 }
 function visible(sec){
-  return PRODUCTS.filter(function(p){
-    if(sec&&sec.men===false&&p.cat==="رجالي")return false;
-    if(sec&&sec.women===false&&p.cat==="نسائي")return false;
-    return true});
+  return PRODUCTS;
 }
 function apply(arr,sec){
   PRODUCTS=norm(arr);
@@ -757,12 +752,11 @@ async function init(){
   try{
     var r=await Promise.all([
       OrrisCloud.rpc("public_perfumes"),
-      OrrisCloud.rpc("site_is_open").catch(function(){return true}),
-      OrrisCloud.rpc("site_sections").catch(function(){return null})
+      OrrisCloud.rpc("site_is_open").catch(function(){return true})
     ]);
     closed=(r[1]===false);
     try{localStorage.setItem("orris_shop_cache",JSON.stringify(r[0]||[]))}catch(e){}
-    apply(r[0],r[2]&&typeof r[2]==="object"?r[2]:null);
+    apply(r[0],null);
   }catch(e){
     if(!cached)$("grid").innerHTML='<p class="state" style="grid-column:1/-1">تعذّر تحميل العطور. حاول لاحقاً.</p>';
     if(window.console)console.warn("ORRIS shop:",e&&e.message,e&&e.info);

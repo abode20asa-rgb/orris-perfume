@@ -411,17 +411,6 @@ button{border-radius:4px}
       </div>
     </div>
     <div id="githubInstr" class="github-instr"></div>
-    <!-- إغلاق الأقسام -->
-    <div id="secMenBar" class="site-status-bar on">
-      <div class="status-info"><h3 id="secMenTitle">قسم الرجالي: مفتوح</h3><p id="secMenDesc">الزبائن يشوفون عطور الرجال ويطلبون منها</p></div>
-      <div class="toggle-wrap"><span class="toggle-label" id="secMenLabel">مفتوح</span>
-        <label class="switch"><input type="checkbox" id="secMen" onchange="toggleSection()" checked><span class="slider-sw"></span></label></div>
-    </div>
-    <div id="secWomenBar" class="site-status-bar on">
-      <div class="status-info"><h3 id="secWomenTitle">قسم النسائي: مفتوح</h3><p id="secWomenDesc">الزبائن يشوفون عطور النساء ويطلبون منها</p></div>
-      <div class="toggle-wrap"><span class="toggle-label" id="secWomenLabel">مفتوح</span>
-        <label class="switch"><input type="checkbox" id="secWomen" onchange="toggleSection()" checked><span class="slider-sw"></span></label></div>
-    </div>
 
     <!-- إحصائيات -->
     <div class="stats-grid" id="statsGrid"></div>
@@ -844,8 +833,7 @@ function refreshFromCloud(){
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshFromCloud(); });
 window.addEventListener('focus', refreshFromCloud);
 setInterval(refreshFromCloud, 30000);
-function initAll(){ try{ setSizes(sizeTpl()); loadSizeTpl(); }catch(e){} try{ spStart(); }catch(e){} try{ rvLoad(); setInterval(rvLoad,30000); }catch(e){} try{ loadPushAdmin(); }catch(e){} try{ initSections(); }catch(e){}
-  initSiteToggle();
+function initAll(){ try{ setSizes(sizeTpl()); loadSizeTpl(); }catch(e){} try{ spStart(); }catch(e){} try{ rvLoad(); setInterval(rvLoad,30000); }catch(e){} try{ loadPushAdmin(); }catch(e){}
   pullFromCloud().then(function(){
     renderStats(); renderOrders(); renderCustomers(); renderCoupons();
     loadTrash();
@@ -853,6 +841,7 @@ function initAll(){ try{ setSizes(sizeTpl()); loadSizeTpl(); }catch(e){} try{ sp
   }).catch(cloudFail);
   loadPerfumesFromSource().then(function(){ renderList(); updateStorageBar(); });
   renderList(); updateStorageBar();
+  initSiteToggle();
 }
 
 // ══ مزامنة الطلبات والزبائن والكوبونات مع Supabase ══
@@ -958,6 +947,11 @@ function updateStatusBar(isOpen){
   document.getElementById('statusTitle').textContent = isOpen ? '🟢 الموقع يعمل الآن' : '🔴 الموقع مغلق';
   document.getElementById('statusDesc').textContent  = isOpen ? 'الزبائن يستطيعون تصفح الموقع وإرسال الطلبات' : 'الزبائن يرون صفحة "الموقع مغلق مؤقتاً"';
   document.getElementById('toggleLabel').textContent = isOpen ? 'تشغيل' : 'إيقاف';
+}
+
+function initSiteToggle(){
+  OrrisCloud.rpc('site_status').then(function(r){ updateStatusBar(r && r.open !== false); })
+    .catch(function(){ updateStatusBar(true); });
 }
 
 // ══ Helpers ══
@@ -1788,32 +1782,6 @@ function extRenderLog(){
 }
 
 // ══ أقسام الموقع (رجالي / نسائي) ══
-function updateSectionBars(s){
-  [['Men','men','','الرجالي'],['Women','women','','النسائي']].forEach(function(x){
-    var open = s[x[1]] !== false;
-    document.getElementById('sec'+x[0]).checked = open;
-    document.getElementById('sec'+x[0]+'Bar').className = 'site-status-bar ' + (open ? 'on' : 'off');
-    document.getElementById('sec'+x[0]+'Title').textContent = 'قسم '+x[3]+': '+(open ? 'مفتوح' : 'مغلق');
-    document.getElementById('sec'+x[0]+'Desc').textContent = open ? 'الزبائن يشوفون هذا القسم ويطلبون منه' : 'الزبائن يشوفون "قريباً" ولا يكدرون يدخلون';
-    document.getElementById('sec'+x[0]+'Label').textContent = open ? 'مفتوح' : 'مغلق';
-  });
-}
-function initSections(){
-  OrrisCloud.rpc('site_sections').then(function(r){ updateSectionBars(r && typeof r==='object' ? r : {men:true,women:true}); })
-    .catch(function(){ updateSectionBars({men:true,women:true}); });
-}
-async function toggleSection(){
-  var s = { men: document.getElementById('secMen').checked, women: document.getElementById('secWomen').checked };
-  try{
-    await OrrisCloud.upsert('site_config',[{key:'sections', value:s}]);
-    updateSectionBars(s);
-    showToast('✅ تم تحديث الأقسام');
-  }catch(e){
-    initSections();
-    showToast('❌ فشل التحديث');
-    alert('سبب الفشل:\n' + String((e && e.message) || e).slice(0, 300));
-  }
-}
 </script>
 <script>
 // ══ الآراء ══
