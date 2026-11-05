@@ -4,6 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>العطور | ORRIS</title>
+<meta name="description" content="تصفّح عطور أوراس الفاخرة — رجالي ونسائي واقتصادي، توصيل لكل العراق.">
+<meta name="theme-color" content="#07090c">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="أوراس | ORRIS">
+<meta property="og:locale" content="ar_IQ">
+<meta property="og:title" content="عطور أوراس | ORRIS">
+<meta property="og:description" content="تصفّح عطور أوراس الفاخرة — رجالي ونسائي واقتصادي.">
+<meta property="og:url" content="https://orris-perfume.vercel.app/shop.html">
+<meta property="og:image" content="https://orris-perfume.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://orris-perfume.vercel.app/og-image.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#07090c;--surface:#0e1410;--green:#1d3319;--green-2:#2f5a28;--cream:#efe6d2;--muted:#a9a592;--gold:#b58a50;--line:#22301f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -263,6 +279,7 @@ footer a{color:var(--gold)}
   </section>
 </aside>
 <script src="supabase-config.js"></script>
+<script src="orris-push.js" defer></script>
 <script src="orris-review-notice.js"></script>
 <script>
 /* ORRIS — قائمة الموقع (الدعم • بياناتي • رأيك • سياسة الخصوصية)
@@ -372,6 +389,7 @@ footer a{color:var(--gold)}
     modal.addEventListener('click',function(e){if(e.target===modal)closeModal()});
     document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();menuOpen(false)}});
     pollUnread();setInterval(pollUnread,45000);
+    if(/[?&]support=1/.test(location.search))setTimeout(openSupport,700);
   }
 
   /* ───────── بياناتي ───────── */
@@ -516,7 +534,14 @@ footer a{color:var(--gold)}
       openModal('الدعم','<p class="t">لازم تسجّل بياناتك (الاسم ورقم الهاتف) قبل ما تراسل الدعم.</p><button class="pb" id="goData">تسجيل بياناتي</button>',function(){$('goData').onclick=openData});
       return;
     }
-    var cid=chatId();lastId=0;seen={};
+    if(window.OrrisPush&&!OrrisPush.allowed()){
+      OrrisPush.ensure(chatId()).then(function(ok){
+        if(ok)openSupport();
+        else openModal('الدعم','<p class="t">حتى تراسل الدعم لازم تفعّل إشعارات الموقع، حتى توصلك ردودنا فوراً.<br>فعّلها من إعدادات المتصفح (🔒 جنب رابط الموقع ← الإشعارات ← سماح) وبعدها حدّث الصفحة.</p><button class="pb" id="pnRetry">حاول مرة ثانية</button>',function(){$('pnRetry').onclick=openSupport});
+      });
+      return;
+    }
+    var cid=chatId();lastId=0;seen={};if(window.OrrisPush)OrrisPush.ensure(cid);
     openModal('الدعم',
       '<div class="chat" id="cB"><div class="empty">اكتب رسالتك وراح نرد عليك بأقرب وقت 💬</div></div>'+
       '<div class="chatbar"><textarea id="cI" rows="1" maxlength="1000" placeholder="اكتب رسالتك…"></textarea><button id="cS">إرسال</button></div><p class="ms" id="cM" role="status"></p>',
@@ -533,7 +558,7 @@ footer a{color:var(--gold)}
           var t=$('cI').value.trim();if(!t)return;
           var b=$('cS');b.disabled=true;msg('cM','');
           rpc('support_send',{p_chat:cid,p_name:c.name,p_phone:ph,p_body:t}).then(function(){
-            $('cI').value='';fetchNew(false);
+            $('cI').value='';fetchNew(false);if(window.OrrisPush)OrrisPush.notifyAdmin(cid);
           }).catch(function(e){
             var m=String(e&&e.message||'');
             msg('cM',/rate/i.test(m)?'أرسلت رسائل كثيرة، انتظر قليلاً.':/register/i.test(m)?'سجّل بياناتك أولاً.':/busy/i.test(m)?'الضغط عالي، حاول بعد قليل.':'تعذّر الإرسال، حاول لاحقاً.',1);
@@ -887,6 +912,11 @@ chips();draw();init();
       if(!pick)return;
       var k=key(p,pick);cart[k]=(cart[k]||0)+1;save();draw();
       ab.className="aipc-a done";ab.textContent="✓ انضافت للسلة ("+cart[k]+")";
+      if(!d.querySelector(".aipc-c")){
+        var c=document.createElement("button");c.type="button";c.className="aipc-c";c.textContent="فتح السلة ←";
+        c.onclick=function(){box.classList.remove("on");document.getElementById("openCart").click()};
+        ab.parentNode.appendChild(c);
+      }
     };
     return d;
   }
@@ -902,6 +932,7 @@ chips();draw();init();
   function send(q){
     q=String(q||"").trim().slice(0,300);
     if(!q||busy)return;
+    if(window.OrrisPush&&!OrrisPush.allowed()){box.classList.remove("on");return}
     busy=true;sendBtn.disabled=true;inp.value="";
     add("u",q);var w=add("a","…");
     fetch(proxy,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({q:q,history:hist.slice(-6),catalog:catalog(),section:SEC})})
@@ -948,7 +979,13 @@ chips();draw();init();
     proxy=String(c.proxy).replace(/\/+$/,"");
     build();
     var card=el("aiCard");card.style.display="flex";
-    card.onclick=function(){box.classList.add("on");setTimeout(function(){inp.focus()},50)};
+    card.onclick=function(){
+      var go=function(){box.classList.add("on");setTimeout(function(){inp.focus()},50)};
+      if(!window.OrrisPush||OrrisPush.allowed())return go();
+      OrrisPush.ensure().then(function(ok){
+        if(ok)go();else alert("حتى تستعمل المساعد الشخصي لازم تفعّل إشعارات الموقع.\nفعّلها من إعدادات المتصفح (🔒 جنب رابط الموقع ← الإشعارات ← سماح) وبعدها حدّث الصفحة.");
+      });
+    };
   }).catch(function(){});
 })();
 </script>

@@ -515,6 +515,20 @@ button{border-radius:4px}
     <div class="section-card">
       <h2>🔔 الإشعارات</h2>
       <div id="pushStats" class="no-items" style="padding:6px 0 14px">...</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center">
+        <button type="button" class="btn-save" style="flex:none;padding:9px 16px" onclick="pnAdminEnable()">📲 تفعيل إشعارات الأدمن على هذا الجهاز</button>
+        <button type="button" class="btn-save" style="flex:none;padding:9px 16px;background:#2f5a28;color:#fff" onclick="pnAdminTest()">🔔 إشعار تجريبي</button>
+        <span id="pnDevSt" style="color:white;font-size:.85rem"></span>
+      </div>
+      <div style="border:1px solid rgba(255,255,255,.35);border-radius:12px;padding:14px;margin-bottom:18px">
+        <label style="display:flex;gap:10px;align-items:center;color:white;font-weight:700;cursor:pointer"><input type="checkbox" id="pa_on" style="width:auto"> 🔁 إرسال إشعار تلقائي بعبارات فخمة (تتناوب)</label>
+        <div class="coupon-form-grid" style="margin-top:12px">
+          <div class="form-group"><label>كل كم يوم؟</label><input type="number" id="pa_days" min="1" max="30" value="2"></div>
+          <div class="form-group"><label>الساعة (بتوقيت بغداد، 0–20)</label><input type="number" id="pa_hour" min="0" max="20" value="19"></div>
+          <div class="form-group" style="grid-column:1/-1"><label>العبارات — كل سطر: العنوان | النص</label><textarea id="pa_phr" rows="8" maxlength="4000" placeholder="أوراس ✨ | أفضل العطور بانتظارك…"></textarea></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button type="button" class="btn-save" style="flex:none;padding:9px 18px" onclick="pnAutoSave()">💾 حفظ الإعدادات التلقائية</button><span id="pa_st" style="color:white;font-size:.85rem"></span></div>
+      </div>
       <div style="margin-bottom:14px">
         <label style="color:white;font-weight:700;font-size:.85rem;display:block;margin-bottom:8px">✨ عبارات جاهزة (اضغط على وحدة وتنكتب تلقائياً، وتكدر تعدلها)</label>
         <div id="pn_templates" style="display:flex;flex-wrap:wrap;gap:8px"></div>
@@ -731,6 +745,8 @@ button{border-radius:4px}
 
 <script src="perfumes-data.js"></script>
 <script src="supabase-config.js"></script>
+<script>window.ORRIS_NO_PN_BANNER=true</script>
+<script src="orris-push.js"></script>
 <script>
 const STORAGE_KEY    = 'orris_perfumes';
 const ORDERS_KEY     = 'orris_orders';
@@ -1081,14 +1097,14 @@ function renderOrders(){
     var items = (order.items||[]).map(function(i,n){ return '<div class="order-item-row">'+(n+1)+'. '+esc(i.name)+(i.size?' ('+esc(i.size)+')':'')+' × '+esc(i.qty)+' — '+esc((i.price*i.qty).toLocaleString('en-US'))+' '+esc(i.currency)+'</div>'; }).join('');
     return '<div class="order-card">' +
       '<div class="order-top">' +
-        '<div><div class="order-id"># '+esc(order.id||idx+1)+(order.code?' <b class="order-code">🔖 '+esc(order.code)+'</b>':'')+(order.manual?' <small style="opacity:.8;font-weight:700">📝 مضاف يدوياً</small>':'')+'</div><div class="order-cust">👤 '+esc(order.customer&&order.customer.name||'—')+'</div><div class="order-phone">📱 '+esc(order.customer&&order.customer.phone||'—')+'</div></div>' +
+        '<div><div class="order-id"># '+esc(order.id||idx+1)+(order.code?' <b class="order-code">🔖 '+esc(order.code)+'</b>':'')+(order.manual?' <small style="opacity:.8;font-weight:700">📝 مضاف يدوياً</small>':'')+'</div><div class="order-cust">👤 '+esc(order.customer&&order.customer.name||'—')+'</div><div class="order-phone">📱 '+esc(order.customer&&order.customer.phone||'—')+'</div><div class="order-phone">📍 '+esc([order.customer&&order.customer.province,order.customer&&order.customer.area,order.customer&&order.customer.address].filter(function(x){return x&&x!=='—';}).join(' - ')||'—')+'</div></div>' +
         '<div style="text-align:left"><div class="order-date">🕐 '+d+'</div>' +
         '<span class="status-badge status-'+st+'">'+STL[st]+'</span></div>' +
       '</div>' +
       '<div class="order-items-list">'+(items||'—')+'</div>' +
       couponLine(order) +
       (order.notes?'<div style="margin:8px 0;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.28);font-size:.85rem;line-height:1.7">📝 <b>ملاحظات الزبون:</b> '+esc(order.notes)+'</div>':'') +
-      '<div class="order-total-row"><span class="order-total-label">الإجمالي</span><span class="order-total-val">'+esc((order.total||0).toLocaleString('en-US'))+' '+esc(order.currency||'دينار')+'</span></div>' +
+      (order.deliveryFee?'<div class="order-item-row">🚚 التوصيل: '+esc(Number(order.deliveryFee).toLocaleString('en-US'))+' '+esc(order.currency||'دينار')+'</div>':'') + '<div class="order-total-row"><span class="order-total-label">الإجمالي</span><span class="order-total-val">'+esc((order.total||0).toLocaleString('en-US'))+' '+esc(order.currency||'دينار')+'</span></div>' +
       '<div class="order-actions">' +
         ['pending','received','delivered'].map(function(k){ return '<button class="btn-st'+(st===k?' on':'')+'" '+(st===k?'disabled':'onclick="setStatus('+idx+',\''+k+'\')"')+'>'+STL[k]+'</button>'; }).join('') +
         '<button class="btn-wa-resend" onclick="resendWA('+idx+')">💬 إعادة إرسال</button>' +
@@ -1111,9 +1127,10 @@ function deleteOrder(i){ if(!confirm('حذف الطلب؟'))return; var o=tryPar
 function resendWA(i){
   var order = tryParse(ORDERS_KEY,[])[i]; if(!order)return;
   var now   = new Date(order.date).toLocaleString('ar',{dateStyle:'long',timeStyle:'short'});
-  var msg   = '🌿 *طلب — أوراس للعطور*\n━━━━━━━━━━━━━━━━━━━━\n👤 *الاسم:* '+(order.customer&&order.customer.name||'—')+'\n📱 *الهاتف:* '+(order.customer&&order.customer.phone||'—')+'\n━━━━━━━━━━━━━━━━━━━━\n🛒 *العطور:*\n';
+  var msg   = '🌿 *طلب — أوراس للعطور*\n━━━━━━━━━━━━━━━━━━━━\n👤 *الاسم:* '+(order.customer&&order.customer.name||'—')+'\n📱 *الهاتف:* '+(order.customer&&order.customer.phone||'—')+'\n📍 *العنوان:* '+([order.customer&&order.customer.province,order.customer&&order.customer.area,order.customer&&order.customer.address].filter(Boolean).join(' - ')||'—')+'\n━━━━━━━━━━━━━━━━━━━━\n🛒 *العطور:*\n';
   (order.items||[]).forEach(function(item,n){ msg+=(n+1)+'. '+item.name+' × '+item.qty+' ← '+(item.price*item.qty).toLocaleString('en-US')+' '+item.currency+'\n'; });
   if(order.notes) msg+='📝 *ملاحظات:* '+order.notes+'\n';
+  if(order.deliveryFee) msg+='🚚 *التوصيل:* '+Number(order.deliveryFee).toLocaleString('en-US')+' '+(order.currency||'دينار')+'\n';
   msg+='━━━━━━━━━━━━━━━━━━━━\n🏷️ *كود الخصم:* '+(order.coupon&&order.coupon.code?order.coupon.code:'بدون كود خصم')+'\n💰 *الإجمالي:* '+((order.total||0).toLocaleString('en-US'))+' '+(order.currency||'دينار')+'\n📅 '+now;
   window.open('https://wa.me/'+WA_NUM+'?text='+encodeURIComponent(msg),'_blank');
 }
@@ -1154,7 +1171,7 @@ function renderCustomers(){
   var statNum = document.querySelector('#statsGrid .stat-card:last-child .stat-num'); if(statNum) statNum.textContent = customers.length;
   var el = document.getElementById('custList');
   if(!customers.length){ el.innerHTML='<div class="no-items">📭 لا يوجد زبائن بعد</div>'; return; }
-  el.innerHTML = customers.map(function(c,i){ return '<div class="cust-item"><div class="cust-num">'+(i+1)+'</div><div class="cust-info"><div class="cust-name">👤 '+esc(c.name)+'</div><div class="cust-phone">📱 '+esc(c.phone)+'</div><div class="cust-phone">🎂 العمر: '+esc(c.age?c.age+' سنة':'—')+'</div><div class="cust-address">📍 '+esc([c.province,c.address].filter(function(x){return x&&x!=='—';}).join(' - '))+'</div></div><button class="btn-del-order" onclick="deleteCustomer('+i+')">🗑️</button></div>'; }).join('');
+  el.innerHTML = customers.map(function(c,i){ return '<div class="cust-item"><div class="cust-num">'+(i+1)+'</div><div class="cust-info"><div class="cust-name">👤 '+esc(c.name)+'</div><div class="cust-phone">📱 '+esc(c.phone)+'</div><div class="cust-phone">🎂 العمر: '+esc(c.age?c.age+' سنة':'—')+'</div><div class="cust-address">📍 '+esc([c.province,c.area,c.address].filter(function(x){return x&&x!=='—';}).join(' - '))+'</div></div><button class="btn-del-order" onclick="deleteCustomer('+i+')">🗑️</button></div>'; }).join('');
 }
 async function deleteCustomer(i){
   var customers = tryParse(CUSTOMERS_KEY, []);
@@ -1578,6 +1595,7 @@ async function spSend(){
   var b = document.getElementById('spSendBtn'); b.disabled = true;
   try{
     await OrrisCloud.rpc('support_admin_reply', {p_chat: spCur, p_body: v});
+    pnWorker('/push/notify', {chat: spCur, body: v.slice(0, 120)}).catch(function(){});
     inp.value = '';
     await spLoadThread(true); spLoadChats();
   }catch(e){ showToast('❌ فشل إرسال الرد'); }
@@ -1612,6 +1630,7 @@ document.addEventListener('DOMContentLoaded', function(){
 // ══ الإشعارات ══
 function pnEsc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 async function loadPushAdmin(){
+  pnAutoLoad();
   try{
     var st = await OrrisCloud.rpc('push_admin_stats');
     document.getElementById('pushStats').innerHTML = '👥 مشتركين بالإشعارات: <strong>'+(st.total||0)+'</strong> &nbsp;|&nbsp; 🛍️ عندهم سلة: <strong>'+(st.withCart||0)+'</strong>';
@@ -1648,15 +1667,8 @@ async function pushSend(){
   btn.disabled=true;
   try{
     await OrrisCloud.insert('push_messages',[{title:title,body:body,url:url,send_at:at.toISOString()}]);
-    if(mode==='now'){
-      var tok=await OrrisCloud.token();
-      var r=await fetch(window.ORRIS_SUPABASE_URL+'/functions/v1/push-sender',{method:'POST',headers:{Authorization:'Bearer '+tok,apikey:window.ORRIS_SUPABASE_KEY,'Content-Type':'application/json'},body:'{}'});
-      var j=null; try{ j=await r.json(); }catch(x){}
-      if(!r.ok||!j) showToast('⚠️ انحفظت وستُرسل خلال 5 دقائق');
-      else if(j.tried===0) showToast('⚠️ ما في رسالة للإرسال');
-      else if(j.sent===j.tried) showToast('✅ وصلت لـ '+j.sent+' من '+j.tried);
-      else { showToast('⚠️ وصلت لـ '+j.sent+' من '+j.tried); alert('سبب الفشل:\n'+(j.error||'غير معروف')); }
-    } else showToast('✅ تمت الجدولة');
+    if(mode==='now') await pnFlush();
+    else showToast('✅ تمت الجدولة');
     document.getElementById('pn_title').value=''; document.getElementById('pn_body').value='';
     loadPushAdmin();
   }catch(e){ showToast('❌ فشل: '+String(e.message||e).slice(0,60)); }
@@ -1665,6 +1677,67 @@ async function pushSend(){
 async function pushDelete(id){
   if(!confirm('إلغاء هذه الرسالة المجدولة؟')) return;
   try{ await OrrisCloud.remove('push_messages','id=eq.'+id+'&status=eq.scheduled'); loadPushAdmin(); }catch(e){ showToast('❌ فشل الحذف'); }
+}
+
+async function pnWorker(path, body){
+  var p = await OrrisPush.proxy(), h = await dzAuthHeaders();
+  var r = await fetch(p + path, {method:'POST', headers:h, body:JSON.stringify(body||{})}), j = null;
+  try{ j = await r.json(); }catch(x){}
+  if(!r.ok || !j) throw new Error((j && j.error) || ('HTTP ' + r.status));
+  return j;
+}
+async function pnFlush(){
+  var tried = 0, sent = 0;
+  try{
+    for(var i = 0; i < 60; i++){
+      var j = await pnWorker('/push/flush');
+      tried += j.tried; sent += j.sent;
+      if(j.error) throw new Error(j.error);
+      if(!j.pending) break;
+    }
+    showToast(tried ? '✅ وصلت لـ ' + sent + ' من ' + tried : '⚠️ ما في مشتركين للإرسال لهم');
+  }catch(e){ showToast('⚠️ ' + String(e.message || e).slice(0, 70)); }
+}
+async function pnAdminEnable(){
+  var st = document.getElementById('pnDevSt');
+  try{
+    var j = await OrrisPush.adminSub();
+    await OrrisCloud.upsert('push_subs', [{endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth, role:'admin', last_visit_at:new Date().toISOString()}]);
+    st.textContent = '✅ مفعّل على هذا الجهاز'; showToast('✅ تم تفعيل إشعارات الأدمن');
+  }catch(e){
+    var m = String((e && e.message) || e);
+    st.textContent = m === 'denied' ? '❌ الإشعارات محظورة من المتصفح — فعّلها من إعدادات الموقع' : m === 'unsupported' ? '❌ هذا المتصفح ما يدعم الإشعارات' : '❌ تعذّر التفعيل: ' + m.slice(0, 60);
+  }
+}
+async function pnAdminTest(){
+  try{ await pnWorker('/push/test'); showToast('✅ انرسل إشعار تجريبي'); }
+  catch(e){ showToast('❌ ' + String(e.message || e).slice(0, 70)); }
+}
+var pnAutoLoaded = false;
+async function pnAutoLoad(){
+  if(pnAutoLoaded) return; pnAutoLoaded = true;
+  try{
+    var r = await OrrisCloud.list('push_config', '&id=eq.1'), c = r && r[0];
+    if(!c) return;
+    document.getElementById('pa_on').checked = !!c.auto_enabled;
+    document.getElementById('pa_days').value = c.interval_days;
+    document.getElementById('pa_hour').value = c.send_hour;
+    document.getElementById('pa_phr').value = (c.phrases || []).map(function(p){ return (p.t || '') + ' | ' + (p.b || ''); }).join('\n');
+  }catch(e){ pnAutoLoaded = false; document.getElementById('pa_st').textContent = '⚠️ شغّل orris-push2.sql في Supabase أولاً'; }
+}
+async function pnAutoSave(){
+  var phrases = document.getElementById('pa_phr').value.split('\n').map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
+    var i = l.indexOf('|');
+    return i < 0 ? {t:'أوراس ✨', b:l.slice(0, 200)} : {t:(l.slice(0, i).trim() || 'أوراس ✨').slice(0, 60), b:l.slice(i + 1).trim().slice(0, 200)};
+  });
+  if(!phrases.length){ showToast('❌ اكتب عبارة وحدة على الأقل'); return; }
+  var days = Math.min(30, Math.max(1, parseInt(document.getElementById('pa_days').value) || 2));
+  var hour = Math.min(20, Math.max(0, parseInt(document.getElementById('pa_hour').value) || 19));
+  try{
+    await OrrisCloud.update('push_config', 'id=eq.1', {auto_enabled:document.getElementById('pa_on').checked, interval_days:days, send_hour:hour, phrases:phrases, next_idx:0, updated_at:new Date().toISOString()});
+    document.getElementById('pa_days').value = days; document.getElementById('pa_hour').value = hour;
+    showToast('✅ انحفظت الإعدادات (' + phrases.length + ' عبارة)');
+  }catch(e){ showToast('❌ فشل الحفظ — شغّل orris-push2.sql'); }
 }
 
 // ── عبارات جاهزة ──
