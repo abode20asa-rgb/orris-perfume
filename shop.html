@@ -204,12 +204,10 @@ footer a{color:var(--gold)}
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <header class="topbar">
+    <button class="mbtn" id="menuBtn" aria-label="القائمة" aria-expanded="false"><span></span><span></span><span></span></button>
     <a class="logo" href="index.html">ORRIS</a>
-    <div class="hbtns">
-      <a href="index.html">الرئيسية</a>
-      <button class="cartbtn" id="openCart" aria-label="السلة">السلة <b id="count">0</b></button>
-    </div>
+    <div class="tleft"><button class="cartbtn" id="openCart" aria-label="السلة">السلة <b id="count">0</b></button></div>
   </header>
   <main>
     <a class="back" href="index.html">← الرئيسية</a>
@@ -222,6 +220,7 @@ footer a{color:var(--gold)}
   <footer>
     <span class="logo">ORRIS</span>
     <p>للاستفسار راسلنا على إنستغرام</p>
+    <p><a href="privacy.html">سياسة الخصوصية</a></p>
     <p><a href="https://www.instagram.com/orris.perfume1" rel="noopener" target="_blank">@orris.perfume1</a></p>
     <p style="margin-top:22px;font-size:14px">جميع الحقوق محفوظة © 2026 أوريس للعطور | ORRIS PERFUME — جميع الحقوق محفوظة</p>
   </footer>
@@ -263,6 +262,7 @@ footer a{color:var(--gold)}
 </aside>
 <script src="supabase-config.js"></script>
 <script src="orris-review-notice.js"></script>
+<script src="orris-menu.js"></script>
 <script>
 var PRODUCTS=[], CATS=["الكل"], cat="الكل", cart={}, selSize={}, closed=false;
 try{var s0=localStorage.getItem("orris_cart2");if(s0)cart=JSON.parse(s0)||{}}catch(e){}
@@ -447,6 +447,7 @@ function applyCoupon(){
 
 function goInfo(){
   if(!calc().L.length)return;
+  try{var sv=JSON.parse(localStorage.getItem("orris_cust")||"null");if(sv&&typeof sv==="object")info=Object.assign(info,sv)}catch(e){}
   $("i_name").value=info.name;$("i_phone").value=info.phone;$("i_area").value=info.area;$("i_addr").value=info.addr;
   $("i_prov").innerHTML='<option value="">اختر المحافظة</option>'+PROVS.map(function(x){return '<option'+(x===info.prov?' selected':'')+'>'+x+'</option>'}).join("");
   var c=calc();
