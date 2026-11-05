@@ -130,10 +130,7 @@ footer a{color:var(--gold)}
       if(!window.OrrisCloud) return;
       var isOpen = await OrrisCloud.rpc('site_is_open').catch(function(){ return true; });
       if(isOpen === false){
-        var main = document.querySelector('main');
-        if(main){
-          main.innerHTML = '<div style="text-align:center;padding:80px 20px"><div style="font-size:3rem;margin-bottom:20px">🔒</div><h1 style="font-size:2rem;margin-bottom:10px">الموقع مغلق مؤقتاً</h1><p style="color:var(--muted,#a9a592);font-size:1.1rem">يرجى المحاولة لاحقاً</p></div>';
-        }
+        document.body.innerHTML = '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;background:#0a0b0d;color:#f3efe6;font-family:inherit"><div><div style="font-size:3rem;margin-bottom:20px">🔒</div><h1 style="font-size:2rem;margin-bottom:10px">الموقع مغلق مؤقتاً</h1><p style="color:#a9a592;font-size:1.1rem">يرجى المحاولة لاحقاً</p></div></div>';
       }
     }catch(e){}
   }
