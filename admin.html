@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة التحكم | أوراس</title>
+<title>لوحة التحكم | أوريس</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--pink:#07090c;--pink-deep:#b58a50}
@@ -362,7 +362,7 @@ button{border-radius:4px}
   <div class="lock-box">
     <div class="lock-icon">🔐</div>
     <h2>لوحة التحكم <small style="font-size:.6rem;opacity:.55;font-weight:400">v5</small></h2>
-    <p>أوراس للعطور — الدخول للمشرف فقط</p>
+    <p>أوريس للعطور — الدخول للمشرف فقط</p>
     <input type="email" id="emailInput" class="lock-input" placeholder="الإيميل" dir="ltr" autocomplete="username" style="letter-spacing:0">
     <input type="password" id="passInput" class="lock-input" placeholder="كلمة السر" autocomplete="current-password"
            onkeydown="if(event.key==='Enter')checkPass()">
@@ -375,7 +375,7 @@ button{border-radius:4px}
 <div id="adminPanel">
   <header>
     <img src="images/logo.jpg" alt="Logo" class="logo" onerror="this.style.display='none'">
-    <div class="header-title">⚙️ لوحة التحكم — أوراس للعطور</div>
+    <div class="header-title">⚙️ لوحة التحكم — أوريس للعطور</div>
     <div class="hd-end">
       <div class="dots-wrap">
         <button type="button" class="dots-btn" id="dotsBtn" aria-label="القائمة" aria-haspopup="true" aria-expanded="false" onclick="dotsToggle(event)"><i></i><i></i><i></i></button>
@@ -525,7 +525,7 @@ button{border-radius:4px}
         <div class="coupon-form-grid" style="margin-top:12px">
           <div class="form-group"><label>كل كم يوم؟</label><input type="number" id="pa_days" min="1" max="30" value="2"></div>
           <div class="form-group"><label>الساعة (بتوقيت بغداد، 0–20)</label><input type="number" id="pa_hour" min="0" max="20" value="19"></div>
-          <div class="form-group" style="grid-column:1/-1"><label>العبارات — كل سطر: العنوان | النص</label><textarea id="pa_phr" rows="8" maxlength="4000" placeholder="أوراس ✨ | أفضل العطور بانتظارك…"></textarea></div>
+          <div class="form-group" style="grid-column:1/-1"><label>العبارات — كل سطر: العنوان | النص</label><textarea id="pa_phr" rows="8" maxlength="4000" placeholder="أوريس ✨ | أفضل العطور بانتظارك…"></textarea></div>
         </div>
         <div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button type="button" class="btn-save" style="flex:none;padding:9px 18px" onclick="pnAutoSave()">💾 حفظ الإعدادات التلقائية</button><span id="pa_st" style="color:white;font-size:.85rem"></span></div>
       </div>
@@ -675,7 +675,7 @@ button{border-radius:4px}
   <div class="ai-box">
     <div class="ai-top"><h2>🤖 الذكاء الاصطناعي</h2><button type="button" class="ai-x" onclick="aiClose()" aria-label="إغلاق">✕</button></div>
     <div class="ai-usage" id="aiUsage"><div class="uh"><span>📊 الطلبات المتبقية اليوم</span><span><small id="aiUsageTime"></small> <button type="button" class="ai-mini" style="padding:4px 12px" onclick="aiUsageLoad()">🔄</button></span></div><div id="aiUsageBody">⏳ جاري التحميل…</div></div>
-    <div class="ai-note">مساعد أوراس يشتغل <b>هجين</b>: أول شي يجاوب من القائمة، وإذا ما لكى جواب يجاوب الذكاء الاصطناعي <b>كرد عادي بدون ما يبين اسمه أو شعاره للزبون</b>.</div>
+    <div class="ai-note">مساعد أوريس يشتغل <b>هجين</b>: أول شي يجاوب من القائمة، وإذا ما لكى جواب يجاوب الذكاء الاصطناعي <b>كرد عادي بدون ما يبين اسمه أو شعاره للزبون</b>.</div>
     <div id="aiStatus" class="ai-note" style="display:none"></div>
     <div class="ai-sw"><span>تشغيل الذكاء الاصطناعي بالمساعد</span><label class="switch"><input type="checkbox" id="ai_enabled"><span class="slider-sw"></span></label></div>
     <div class="ai-tabs" id="aiTabs"></div>
@@ -1127,7 +1127,7 @@ function deleteOrder(i){ if(!confirm('حذف الطلب؟'))return; var o=tryPar
 function resendWA(i){
   var order = tryParse(ORDERS_KEY,[])[i]; if(!order)return;
   var now   = new Date(order.date).toLocaleString('ar',{dateStyle:'long',timeStyle:'short'});
-  var msg   = '🌿 *طلب — أوراس للعطور*\n━━━━━━━━━━━━━━━━━━━━\n👤 *الاسم:* '+(order.customer&&order.customer.name||'—')+'\n📱 *الهاتف:* '+(order.customer&&order.customer.phone||'—')+'\n📍 *العنوان:* '+([order.customer&&order.customer.province,order.customer&&order.customer.area,order.customer&&order.customer.address].filter(Boolean).join(' - ')||'—')+'\n━━━━━━━━━━━━━━━━━━━━\n🛒 *العطور:*\n';
+  var msg   = '🌿 *طلب — أوريس للعطور*\n━━━━━━━━━━━━━━━━━━━━\n👤 *الاسم:* '+(order.customer&&order.customer.name||'—')+'\n📱 *الهاتف:* '+(order.customer&&order.customer.phone||'—')+'\n📍 *العنوان:* '+([order.customer&&order.customer.province,order.customer&&order.customer.area,order.customer&&order.customer.address].filter(Boolean).join(' - ')||'—')+'\n━━━━━━━━━━━━━━━━━━━━\n🛒 *العطور:*\n';
   (order.items||[]).forEach(function(item,n){ msg+=(n+1)+'. '+item.name+' × '+item.qty+' ← '+(item.price*item.qty).toLocaleString('en-US')+' '+item.currency+'\n'; });
   if(order.notes) msg+='📝 *ملاحظات:* '+order.notes+'\n';
   if(order.deliveryFee) msg+='🚚 *التوصيل:* '+Number(order.deliveryFee).toLocaleString('en-US')+' '+(order.currency||'دينار')+'\n';
@@ -1728,7 +1728,7 @@ async function pnAutoLoad(){
 async function pnAutoSave(){
   var phrases = document.getElementById('pa_phr').value.split('\n').map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
     var i = l.indexOf('|');
-    return i < 0 ? {t:'أوراس ✨', b:l.slice(0, 200)} : {t:(l.slice(0, i).trim() || 'أوراس ✨').slice(0, 60), b:l.slice(i + 1).trim().slice(0, 200)};
+    return i < 0 ? {t:'أوريس ✨', b:l.slice(0, 200)} : {t:(l.slice(0, i).trim() || 'أوريس ✨').slice(0, 60), b:l.slice(i + 1).trim().slice(0, 200)};
   });
   if(!phrases.length){ showToast('❌ اكتب عبارة وحدة على الأقل'); return; }
   var days = Math.min(30, Math.max(1, parseInt(document.getElementById('pa_days').value) || 2));
@@ -1742,16 +1742,16 @@ async function pnAutoSave(){
 
 // ── عبارات جاهزة ──
 var PN_TEMPLATES=[
- {n:'عطور فخمة',t:'عطور فخمة بانتظارك 🌿',b:'تشكيلة فواحة تدوم طول اليوم، اكتشفها الآن من أوراس.'},
+ {n:'عطور فخمة',t:'عطور فخمة بانتظارك 🌿',b:'تشكيلة فواحة تدوم طول اليوم، اكتشفها الآن من أوريس.'},
  {n:'أصناف جديدة',t:'وصلت أصناف جديدة ✨',b:'عطور جديدة بثبات عالي ورائحة تلفت الانتباه، تعال شوف الجديد.'},
  {n:'فواحة وثابتة',t:'رائحة تدوم وتبقى 💖',b:'عطور فواحة وثابتة تخليك مميز بكل مكان، جرّب عطرك القادم.'},
  {n:'عطر الأكثر مبيعاً',t:'الأكثر طلباً هالأسبوع ⭐',b:'عطور حازت على إعجاب الزبائن، شوف شنو اختاروا.'},
- {n:'للهدايا',t:'هدية تنذكر 🎁',b:'عطر من أوراس هو أجمل هدية لمن تحب، اختار هديتك الآن.'},
+ {n:'للهدايا',t:'هدية تنذكر 🎁',b:'عطر من أوريس هو أجمل هدية لمن تحب، اختار هديتك الآن.'},
  {n:'كمية محدودة',t:'الكمية محدودة 🔥',b:'بعض العطور قاربت على النفاذ، لا تفوّت عطرك المفضل.'},
  {n:'صباح الخير',t:'صباحك عطر 🌷',b:'ابدأ يومك برائحة تحبها، عطورك المفضلة بانتظارك.'},
  {n:'مساء الخير',t:'مساؤك ورد 🌹',b:'اختار عطر السهرة اللي يليق بك، تصفح تشكيلتنا الآن.'},
  {n:'السلة بانتظارك',t:'سلتك بانتظارك 🛍️',b:'عطورك جاهزة بالسلة، أكمل طلبك قبل ما تنفذ الكمية.'},
- {n:'شكراً لثقتكم',t:'شكراً لثقتكم 💕',b:'نفتخر بكم في أوراس، وبانتظاركم دائماً بأجمل العطور.'}
+ {n:'شكراً لثقتكم',t:'شكراً لثقتكم 💕',b:'نفتخر بكم في أوريس، وبانتظاركم دائماً بأجمل العطور.'}
 ];
 (function(){
   var box=document.getElementById('pn_templates'); if(!box) return;

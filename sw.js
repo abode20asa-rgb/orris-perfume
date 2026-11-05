@@ -13,7 +13,7 @@ self.addEventListener('push', function (e) {
     data: { url: d.url || '/shop.html' }
   };
   if (d.tag) { opts.tag = d.tag; opts.renotify = true; }
-  e.waitUntil(self.registration.showNotification(d.title || 'أوراس', opts));
+  e.waitUntil(self.registration.showNotification(d.title || 'أوريس', opts));
 });
 
 self.addEventListener('notificationclick', function (e) {
