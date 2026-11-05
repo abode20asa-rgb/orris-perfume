@@ -63,18 +63,6 @@ h2{font-size:34px;margin-bottom:8px}
 .back{color:var(--muted);display:inline-block;margin:10px 0 24px}
 .shade{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:20}
 .shade.on{display:block}
-.drawer{position:fixed;top:0;bottom:0;left:0;width:min(400px,100%);background:var(--surface);border-right:1px solid var(--line);z-index:30;transform:translateX(-102%);transition:transform .25s;display:flex;flex-direction:column;padding:calc(20px + env(safe-area-inset-top,0px)) 22px calc(20px + env(safe-area-inset-bottom,0px))}
-.drawer.on{transform:none}
-.dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.dh h2{font-size:26px;margin:0}
-.items{flex:1;overflow:auto}
-.it{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
-.it h3{font-size:19px}
-.qty{display:flex;align-items:center;gap:10px}
-.qty button{width:28px;height:28px;border:1px solid var(--line)}
-.empty{color:var(--muted);padding:30px 0;text-align:center}
-.send{margin-top:16px;width:100%;background:var(--gold);color:#07090c;padding:12px;font-size:17px}
-.note{margin-top:10px;font-size:14px;color:var(--muted);min-height:22px}
 footer{border-top:1px solid var(--line);padding:40px 0 50px;text-align:center;color:var(--muted)}
 footer .logo{color:var(--cream);display:block;margin-bottom:10px}
 footer a{color:var(--gold)}
@@ -111,7 +99,107 @@ footer a{color:var(--gold)}
 #szDone{width:100%;margin-top:6px;background:var(--gold);color:#07090c;padding:11px;font-size:17px}
 #szDone[disabled]{opacity:.4;cursor:not-allowed}
 #szClose{margin-top:8px;width:100%;color:var(--muted);padding:6px}
-.it small{color:var(--muted);display:block;font-size:13px}
+
+/* ══ السلة (درج جانبي بـ 3 خطوات) ══ */
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(430px,100%);z-index:30;transform:translateX(-104%);transition:transform .32s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;
+  background:linear-gradient(180deg,#0f1a10 0%,var(--surface) 38%,#0a100b 100%);border-right:1px solid var(--gold);
+  padding:calc(16px + env(safe-area-inset-top,0px)) 0 calc(14px + env(safe-area-inset-bottom,0px));box-shadow:12px 0 50px rgba(0,0,0,.55)}
+.drawer.on{transform:none}
+.drawer::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(135deg,rgba(181,138,80,.045) 0 1px,transparent 1px 14px)}
+.drawer>*{position:relative}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:0 20px}
+.dh h2{font-size:25px;margin:0;display:flex;align-items:center;gap:8px}
+.dx{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:18px;transition:transform .25s,border-color .2s}
+.dx:hover{transform:rotate(90deg);border-color:var(--gold)}
+.steps{display:flex;align-items:center;gap:6px;padding:14px 20px 4px;font-size:12px;color:var(--muted)}
+.steps i{flex:1;height:2px;background:var(--line);position:relative;overflow:hidden;border-radius:2px}
+.steps i::after{content:"";position:absolute;inset:0;background:var(--gold);transform:scaleX(0);transform-origin:right;transition:transform .45s}
+.steps i.on::after{transform:scaleX(1)}
+.steps b{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-weight:400;font-size:12px;transition:all .3s}
+.steps b.on{border-color:var(--gold);background:var(--gold);color:#07090c}
+.shimmer{height:1px;margin:12px 20px 0;background:linear-gradient(90deg,transparent,var(--gold),transparent);background-size:200% 100%;animation:shim 3.2s linear infinite}
+@keyframes shim{to{background-position:-200% 0}}
+.vbody{flex:1;overflow:auto;padding:14px 20px 8px}
+.foot{padding:12px 20px 0;border-top:1px solid var(--line);background:rgba(7,9,12,.35)}
+.view2{display:none;flex-direction:column;flex:1;min-height:0}
+.view2.on{display:flex}
+
+.citem{display:flex;gap:12px;align-items:center;padding:12px;margin-bottom:10px;border:1px solid var(--line);background:rgba(14,20,16,.8);border-radius:4px;animation:inUp .35s both}
+@keyframes inUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.cbot{width:46px;height:58px;flex:none;display:grid;place-items:center;background:linear-gradient(160deg,var(--green),#0a120a);border:1px solid var(--line)}
+.cbot i{display:block;width:18px;height:30px;border:1.5px solid var(--cream);border-radius:4px;position:relative}
+.cbot i::before{content:"";position:absolute;top:-8px;left:4px;width:7px;height:7px;border:1.5px solid var(--cream);border-bottom:0}
+.cmeta{flex:1;min-width:0}
+.cmeta h3{font-size:19px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip2{display:inline-block;font-size:12px;border:1px solid var(--gold);color:var(--gold);padding:0 8px;margin:2px 0}
+.cmeta small{color:var(--muted);display:block;font-size:13px}
+.cside{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.cstep{display:flex;align-items:center;border:1px solid var(--gold);border-radius:30px;overflow:hidden}
+.cstep button{width:28px;height:28px;font-size:17px;line-height:1;display:grid;place-items:center;transition:background .2s}
+.cstep button:hover{background:var(--green-2)}
+.cstep span{min-width:24px;text-align:center;font-family:'Amiri',serif;font-size:18px}
+.crm{font-size:12px;color:#ff9a9a;opacity:.85}
+.crm:hover{opacity:1;text-decoration:underline}
+.cline{font-size:14px;color:var(--gold)}
+
+.cempty{text-align:center;padding:50px 10px;color:var(--muted)}
+.cempty .fb{display:inline-block;width:54px;height:84px;border:2px solid var(--gold);border-radius:10px;position:relative;margin-bottom:26px;animation:flt 3s ease-in-out infinite}
+.cempty .fb::before{content:"";position:absolute;top:-19px;left:17px;width:16px;height:16px;border:2px solid var(--gold);border-bottom:0}
+.cempty .fb::after{content:"";position:absolute;left:50%;top:-40px;width:6px;height:6px;border-radius:50%;background:var(--gold);opacity:.6;animation:smk 3s ease-in-out infinite}
+@keyframes flt{50%{transform:translateY(-8px)}}
+@keyframes smk{0%{transform:translate(-50%,0);opacity:.7}100%{transform:translate(-20%,-26px);opacity:0}}
+.cempty p{margin-bottom:18px}
+
+.ticket{position:relative;margin:14px 0 12px;border:1px dashed var(--gold);border-radius:4px;background:rgba(181,138,80,.06)}
+.ticket::before,.ticket::after{content:"";position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--surface);border:1px dashed var(--gold);transform:translateY(-50%)}
+.ticket::before{right:-8px}.ticket::after{left:-8px}
+.tk-h{width:100%;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;font-size:15px}
+.tk-h span:last-child{transition:transform .25s}
+.ticket.open .tk-h span:last-child{transform:rotate(180deg)}
+.tk-b{display:none;padding:0 18px 14px}
+.ticket.open .tk-b{display:block}
+.tk-row{display:flex;gap:8px}
+.tk-row input{flex:1;min-width:0;direction:ltr;text-align:center;letter-spacing:.12em;text-transform:uppercase}
+.tk-row button{background:var(--gold);color:#07090c;padding:0 16px;border-radius:2px}
+.tk-ok{display:flex;justify-content:space-between;align-items:center;padding:11px 18px;color:#9fe29f;font-size:15px}
+.tk-ok button{color:#ff9a9a;font-size:13px}
+.tk-msg{font-size:13px;margin-top:8px;min-height:18px;color:#ff9a9a}
+
+.fld{display:block;margin-bottom:12px}
+.fld>span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.fld>span em{font-style:normal;opacity:.7}
+.fld input,.fld select,.fld textarea,.tk-row input{width:100%;background:var(--bg);color:var(--cream);border:1px solid var(--line);padding:10px 12px;font:inherit;border-radius:2px;transition:border-color .2s}
+.fld input:focus,.fld select:focus,.fld textarea:focus,.tk-row input:focus{outline:none;border-color:var(--gold)}
+.fld textarea{min-height:64px;resize:vertical}
+.fld.bad input,.fld.bad select{border-color:#ff6b6b}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.sum{font-size:15px;color:var(--muted);margin-bottom:8px}
+.sum div{display:flex;justify-content:space-between;padding:2px 0}
+.sum .dis{color:#9fe29f}
+.sum .tot{color:var(--cream);font-size:20px;font-family:'Amiri',serif;border-top:1px solid var(--line);margin-top:6px;padding-top:8px}
+.sum .tot b{font-weight:400;color:var(--gold)}
+.go{position:relative;overflow:hidden;width:100%;background:var(--gold);color:#07090c;padding:13px;font-size:18px;border-radius:2px;display:flex;justify-content:center;align-items:center;gap:8px}
+.go::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);animation:sw 3.4s ease-in-out infinite}
+@keyframes sw{60%,100%{left:130%}}
+.go[disabled]{opacity:.55;cursor:wait}
+.go2{width:100%;margin-top:8px;padding:9px;color:var(--muted);font-size:15px}
+.go2:hover{color:var(--cream)}
+.err{color:#ff9a9a;font-size:14px;min-height:20px;margin:0 0 6px;text-align:center}
+
+.done{text-align:center;padding:30px 6px 10px}
+.ring{width:84px;height:84px;margin:0 auto 18px;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;animation:pop .5s cubic-bezier(.2,1.4,.4,1) both}
+.ring svg{width:40px;height:40px;stroke:var(--gold);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:dr .5s .35s forwards}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+@keyframes dr{to{stroke-dashoffset:0}}
+.done h3{font-size:26px;margin-bottom:6px}
+.done p{color:var(--muted);font-size:15px;margin-bottom:6px}
+.ocode{display:inline-flex;align-items:center;gap:10px;margin:14px 0 8px;padding:8px 18px;border:1px dashed var(--gold);font-family:'Amiri',serif;font-size:30px;letter-spacing:.3em;direction:ltr;color:var(--gold)}
+.ocode button{font-size:13px;letter-spacing:0;font-family:'Tajawal',sans-serif;color:var(--muted)}
+.spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--gold);pointer-events:none;animation:spk 1.1s ease-out forwards}
+@keyframes spk{to{transform:translate(var(--dx),var(--dy));opacity:0}}
+@media (prefers-reduced-motion:reduce){.drawer,.shimmer,.go::after,.cempty .fb,.cempty .fb::after,.ring,.ring svg,.citem{animation:none!important;transition:none!important}.ring svg{stroke-dashoffset:0}}
 </style>
 </head>
 <body>
@@ -140,11 +228,38 @@ footer a{color:var(--gold)}
 </div>
 <div id="szModal" role="dialog" aria-modal="true" aria-label="نوع الحجم"><div class="box"><h3 id="szTitle"></h3><p class="hint">اختر الحجم ثم اضغط «تم» للحفظ</p><div id="szOpts"></div><button id="szDone" disabled>تم</button><button id="szClose">إلغاء</button></div></div>
 <div class="shade" id="shade"></div>
-<aside class="drawer" id="drawer" aria-label="السلة">
-  <div class="dh"><h2>السلة</h2><button id="closeCart" aria-label="إغلاق">✕</button></div>
-  <div class="items" id="items"></div>
-  <button class="send" id="send">إرسال الطلب للاستفسار</button>
-  <p class="note" id="note"></p>
+<aside class="drawer" id="drawer" aria-label="سلة المشتريات">
+  <div class="dh"><h2>سلة المشتريات <span aria-hidden="true">🛍️</span></h2><button class="dx" id="closeCart" aria-label="إغلاق">✕</button></div>
+  <div class="steps" id="steps"><b class="on">١</b><i></i><b>٢</b><i></i><b>٣</b></div>
+  <div class="shimmer"></div>
+
+  <section class="view2 on" id="vCart">
+    <div class="vbody" id="cartBody"></div>
+    <div class="foot" id="cartFoot"></div>
+  </section>
+
+  <section class="view2" id="vInfo">
+    <div class="vbody">
+      <label class="fld" id="f_name"><span>الاسم الكامل</span><input id="i_name" type="text" maxlength="60" autocomplete="name"></label>
+      <label class="fld" id="f_phone"><span>رقم الهاتف</span><input id="i_phone" type="tel" inputmode="tel" dir="ltr" placeholder="07XXXXXXXXX" autocomplete="tel" style="text-align:right"></label>
+      <div class="two">
+        <label class="fld" id="f_prov"><span>المحافظة</span><select id="i_prov"></select></label>
+        <label class="fld"><span>المنطقة <em>(اختياري)</em></span><input id="i_area" type="text" maxlength="60"></label>
+      </div>
+      <label class="fld" id="f_addr"><span>أقرب نقطة دالة / العنوان</span><input id="i_addr" type="text" maxlength="200" autocomplete="street-address"></label>
+      <div class="sum" id="infoSum"></div>
+    </div>
+    <div class="foot">
+      <p class="err" id="orderErr" role="alert"></p>
+      <button class="go" id="placeBtn">تأكيد الطلب ✓</button>
+      <button class="go2" id="backBtn">→ رجوع للسلة</button>
+    </div>
+  </section>
+
+  <section class="view2" id="vDone">
+    <div class="vbody"><div class="done" id="doneBox"></div></div>
+    <div class="foot"><button class="go" id="doneBtn">العودة للمتجر</button></div>
+  </section>
 </aside>
 <script src="supabase-config.js"></script>
 <script src="orris-review-notice.js"></script>
@@ -233,37 +348,157 @@ $("szDone").onclick=function(){if(!szTmp||szCur<0)return;selSize[szCur]=szTmp;cl
 $("szClose").onclick=closeSz;
 $("szModal").addEventListener("click",function(e){if(e.target===this)closeSz()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSz()});
+
+// ══ السلة والطلب ══
+var PROVS=["بغداد","البصرة","نينوى","أربيل","النجف","كربلاء","ذي قار","الأنبار","ديالى","كركوك","صلاح الدين","بابل","ميسان","المثنى","القادسية","واسط","السليمانية","دهوك","حلبجة"];
+var view="cart", coupon=null, notes="", cpOpen=false, cpMsg="", cpVal="", busy=false, lastTotal=0;
+var info={name:"",phone:"",prov:"",area:"",addr:""};
+try{var si=JSON.parse(localStorage.getItem("orris_cust")||"null");if(si&&typeof si==="object")info=Object.assign(info,si)}catch(e){}
+
+function lines(){
+  var a=[];
+  Object.keys(cart).forEach(function(k){
+    var p=find(k);if(!p)return;var sz=k.split("||")[1];if(!entry(p,sz))return;
+    a.push({k:k,p:p,sz:sz,qty:cart[k],unit:priceOf(p,sz),old:oldOf(p,sz)});
+  });
+  return a;
+}
+function calc(){
+  var L=lines(),sub=0,cur="دينار";
+  L.forEach(function(l){sub+=l.unit*l.qty;cur=l.p.cur});
+  var disc=0;
+  if(coupon&&sub){disc=coupon.type==="percent"?Math.round(sub*coupon.value/100):coupon.value;disc=Math.max(0,Math.min(disc,sub))}
+  return {L:L,sub:sub,disc:disc,total:sub-disc,cur:cur,n:L.reduce(function(a,l){return a+l.qty},0)};
+}
+function countUp(el,to){
+  if(!el)return;var from=lastTotal,t0=null;lastTotal=to;
+  if(from===to||window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches){el.textContent=fmt(to);return}
+  (function step(ts){if(!t0)t0=ts;var r=Math.min((ts-t0)/380,1);el.textContent=fmt(from+(to-from)*r);if(r<1)requestAnimationFrame(step)})(performance.now?performance.now():0);
+}
+function setSteps(n){
+  var b=$("steps").querySelectorAll("b"),i=$("steps").querySelectorAll("i");
+  for(var x=0;x<3;x++)b[x].className=x<n?"on":"";
+  for(x=0;x<2;x++)i[x].className=x<n-1?"on":"";
+}
+function show(v){
+  view=v;["Cart","Info","Done"].forEach(function(n){$("v"+n).className="view2"+(("v"+n)==="v"+v.charAt(0).toUpperCase()+v.slice(1)?" on":"")});
+  setSteps(v==="cart"?1:v==="info"?2:3);
+}
+function cartView(){
+  var c=calc();
+  if(!c.L.length){
+    $("cartBody").innerHTML='<div class="cempty"><div class="fb"></div><p>سلتك فارغة، أضف عطراً يعجبك</p><button class="btn fill" id="browse">تصفح العطور</button></div>';
+    $("cartFoot").innerHTML="";return;
+  }
+  var h=c.L.map(function(l,i){
+    return '<div class="citem" style="animation-delay:'+(i*60)+'ms"><div class="cbot"><i></i></div><div class="cmeta"><h3>'+esc(l.p.name)+'</h3><span class="chip2">'+esc(l.sz)+'</span><small>'+(l.unit?fmt(l.unit)+' '+esc(l.p.cur):'')+'</small></div>'+
+      '<div class="cside"><div class="cstep"><button data-m="'+esc(l.k)+'" aria-label="نقص">−</button><span>'+l.qty+'</span><button data-p="'+esc(l.k)+'" aria-label="زيادة">+</button></div><span class="cline">'+fmt(l.unit*l.qty)+'</span><button class="crm" data-rm="'+esc(l.k)+'">حذف</button></div></div>';
+  }).join("");
+  h+=coupon
+    ? '<div class="ticket"><div class="tk-ok"><span>🏷️ تم تطبيق الكود <b dir="ltr">'+esc(coupon.code)+'</b></span><button id="cpRm">إزالة</button></div></div>'
+    : '<div class="ticket'+(cpOpen?' open':'')+'"><button class="tk-h" id="cpToggle"><span>🎟️ عندك كود خصم؟</span><span>⌄</span></button><div class="tk-b"><div class="tk-row"><input id="cpIn" maxlength="30" placeholder="CODE" autocomplete="off" value="'+esc(cpVal)+'"><button id="cpApply">تطبيق</button></div><p class="tk-msg" id="cpMsg">'+esc(cpMsg)+'</p></div></div>';
+  h+='<label class="fld"><span>ملاحظات إضافية <em>(اختياري)</em></span><textarea id="notesIn" maxlength="300" placeholder="اكتب ملاحظتك هنا إن أردت…">'+esc(notes)+'</textarea></label>';
+  $("cartBody").innerHTML=h;
+  $("cartFoot").innerHTML='<div class="sum">'+(c.disc?'<div><span>المجموع</span><span>'+fmt(c.sub)+' '+esc(c.cur)+'</span></div><div class="dis"><span>خصم الكود</span><span>− '+fmt(c.disc)+'</span></div>':'')+'<div class="tot"><span>الإجمالي</span><span><b id="totVal">'+fmt(lastTotal)+'</b> '+esc(c.cur)+'</span></div></div><button class="go" id="goInfo">متابعة <span aria-hidden="true">←</span></button>';
+  countUp($("totVal"),c.total);
+}
 function draw(){
-  // نظّف السلة من عطور انحذفت
   if(PRODUCTS.length){Object.keys(cart).forEach(function(k){var p=find(k);if(!p||!entry(p,k.split("||")[1]))delete cart[k]});save()}
-  var ids=Object.keys(cart),n=0,total=0,cur="";
-  ids.forEach(function(k){n+=cart[k]});
-  $("count").textContent=n;
-  $("items").innerHTML=ids.length?ids.map(function(k){
-    var p=find(k);if(!p)return"";
-    var sz=k.split("||")[1],pr=priceOf(p,sz);total+=pr*cart[k];cur=p.cur;
-    return '<div class="it"><div><h3>'+esc(p.name)+'</h3><small>'+esc(labelOf(p,sz))+(pr?' · '+fmt(pr)+' '+esc(p.cur):'')+'</small></div><div class="qty"><button data-m="'+esc(k)+'" aria-label="نقص">−</button><span>'+cart[k]+'</span><button data-p="'+esc(k)+'" aria-label="زيادة">+</button></div></div>';
-  }).join("")+(total?'<p class="note" style="color:var(--cream)">المجموع: '+fmt(total)+' '+esc(cur)+'</p>':''):'<p class="empty">السلة فارغة</p>';
-  $("send").style.display=ids.length?"block":"none";
+  var c=calc();$("count").textContent=c.n;
+  if(view==="cart")cartView();
   grid();
 }
-$("items").addEventListener("click",function(e){
-  var m=e.target.getAttribute("data-m"),p=e.target.getAttribute("data-p");
-  if(m){cart[m]--;if(cart[m]<=0)delete cart[m]}
-  if(p){cart[p]++}
-  save();draw();
-});
-function toggle(v){$("drawer").className="drawer"+(v?" on":"");$("shade").className="shade"+(v?" on":"");$("note").textContent=""}
-$("openCart").onclick=function(){toggle(true)};
+function toggle(v){
+  $("drawer").className="drawer"+(v?" on":"");$("shade").className="shade"+(v?" on":"");
+  if(v){view==="done"?show("cart"):show(view);draw()}
+}
+$("openCart").onclick=function(){if(view==="done")show("cart");toggle(true)};
 $("closeCart").onclick=$("shade").onclick=function(){toggle(false)};
-$("send").onclick=function(){
-  var t="مرحباً، أريد الاستفسار عن هذه العطور:\n"+Object.keys(cart).map(function(k){
-    var p=find(k);if(!p)return"";var sz=k.split("||")[1],pr=priceOf(p,sz);
-    return "- "+p.name+" ("+labelOf(p,sz)+")"+" × "+cart[k]+(pr?" — "+fmt(pr*cart[k])+" "+p.cur:"")}).filter(Boolean).join("\n");
-  var done=function(msg){$("note").textContent=msg;window.open("https://www.instagram.com/orris.perfume1","_blank")};
-  try{navigator.clipboard.writeText(t).then(function(){done("تم نسخ الطلب. الصقه في المراسلة.")},function(){done("افتح المراسلة واكتب أسماء العطور.")})}
-  catch(e){done("افتح المراسلة واكتب أسماء العطور.")}
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&$("drawer").className.indexOf("on")>-1)toggle(false)});
+
+$("cartBody").addEventListener("click",function(e){
+  var t=e.target,m=t.getAttribute("data-m"),p=t.getAttribute("data-p"),r=t.getAttribute("data-rm");
+  if(m){cart[m]--;if(cart[m]<=0)delete cart[m];save();draw();return}
+  if(p){cart[p]++;save();draw();return}
+  if(r){delete cart[r];save();draw();return}
+  if(t.id==="browse"){toggle(false);return}
+  if(t.closest&&t.closest("#cpToggle")){cpOpen=!cpOpen;cartView();return}
+  if(t.id==="cpRm"){coupon=null;cpMsg="";cpVal="";cartView();return}
+  if(t.id==="cpApply")applyCoupon();
+});
+$("cartBody").addEventListener("input",function(e){
+  if(e.target.id==="notesIn")notes=e.target.value;
+  if(e.target.id==="cpIn")cpVal=e.target.value;
+});
+$("cartBody").addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="cpIn"){e.preventDefault();applyCoupon()}});
+$("cartFoot").addEventListener("click",function(e){if(e.target.id==="goInfo"||(e.target.closest&&e.target.closest("#goInfo")))goInfo()});
+
+function applyCoupon(){
+  var code=(cpVal||"").trim().toUpperCase();
+  if(!code){cpMsg="اكتب الكود أولاً";cartView();return}
+  if(!window.OrrisCloud){cpMsg="تعذّر الفحص حالياً";cartView();return}
+  cpMsg="جارٍ الفحص…";var m=$("cpMsg");if(m)m.textContent=cpMsg;
+  OrrisCloud.rpc("check_coupon",{p_code:code}).then(function(r){
+    if(r&&r.found&&r.valid){coupon={code:r.code,type:r.type,value:Number(r.value)||0};cpMsg="";cpOpen=false}
+    else cpMsg=(r&&r.found)?"هذا الكود غير فعّال":"الكود غير صحيح";
+    cartView();
+  }).catch(function(){cpMsg="تعذّر الفحص، حاول لاحقاً";cartView()});
+}
+
+function goInfo(){
+  if(!calc().L.length)return;
+  $("i_name").value=info.name;$("i_phone").value=info.phone;$("i_area").value=info.area;$("i_addr").value=info.addr;
+  $("i_prov").innerHTML='<option value="">اختر المحافظة</option>'+PROVS.map(function(x){return '<option'+(x===info.prov?' selected':'')+'>'+x+'</option>'}).join("");
+  var c=calc();
+  $("infoSum").innerHTML='<div><span>عدد العطور</span><span>'+c.n+'</span></div>'+(c.disc?'<div class="dis"><span>خصم الكود</span><span>− '+fmt(c.disc)+'</span></div>':'')+'<div class="tot"><span>الإجمالي</span><span><b>'+fmt(c.total)+'</b> '+esc(c.cur)+'</span></div>';
+  $("orderErr").textContent="";show("info");
+}
+$("backBtn").onclick=function(){show("cart");draw()};
+
+function normPhone(v){
+  var d=String(v||"").replace(/[^0-9]/g,"");
+  if(/^9647\d{9}$/.test(d))return "0"+d.slice(3);
+  if(/^07\d{9}$/.test(d))return d;
+  if(/^7\d{9}$/.test(d))return "0"+d;
+  return null;
+}
+var ERRS={closed:"المتجر مغلق حالياً.",name:"اكتب اسمك.",phone:"رقم الهاتف غير صحيح (مثال 07712345678).",province:"اختر المحافظة.",address:"اكتب العنوان.",items:"تحقق من السلة.",item:"عطر تغيّر أو حُذف، أغلق السلة وحدّث الصفحة.",soldout:"أحد العطور نفذ.",price:"أحد العطور بدون سعر.",coupon:"كود الخصم غير صالح.",coupon_used:"استخدمت هذا الكود من قبل.",rate:"أرسلت طلبات كثيرة، حاول بعد قليل.",busy:"الضغط عالي حالياً، حاول بعد قليل."};
+function markBad(id,bad){$(id).className="fld"+(bad?" bad":"")}
+$("placeBtn").onclick=function(){
+  if(busy)return;
+  info={name:$("i_name").value.trim(),phone:$("i_phone").value.trim(),prov:$("i_prov").value,area:$("i_area").value.trim(),addr:$("i_addr").value.trim()};
+  var ph=normPhone(info.phone);
+  markBad("f_name",!info.name);markBad("f_phone",!ph);markBad("f_prov",!info.prov);markBad("f_addr",info.addr.length<3);
+  var msg=!info.name?ERRS.name:!ph?ERRS.phone:!info.prov?ERRS.province:info.addr.length<3?ERRS.address:"";
+  if(msg){$("orderErr").textContent=msg;return}
+  if(!window.OrrisCloud){$("orderErr").textContent="تعذّر إرسال الطلب حالياً.";return}
+  var c=calc();if(!c.L.length){$("orderErr").textContent=ERRS.items;return}
+  var payload={customer:{name:info.name,phone:ph,province:info.prov,area:info.area,address:info.addr},
+    items:c.L.map(function(l){return{name:l.p.name,size:l.sz,qty:l.qty}}),notes:notes.trim(),coupon:coupon?coupon.code:""};
+  busy=true;var b=this;b.disabled=true;b.textContent="جارٍ إرسال الطلب…";$("orderErr").textContent="";
+  OrrisCloud.rpc("place_order",{p_order:payload}).then(function(r){
+    if(!r||!r.ok){$("orderErr").textContent=ERRS[r&&r.error]||"تعذّر إرسال الطلب، حاول لاحقاً.";return}
+    try{localStorage.setItem("orris_cust",JSON.stringify({name:info.name,phone:ph,prov:info.prov,area:info.area,addr:info.addr}))}catch(e){}
+    cart={};save();coupon=null;notes="";cpVal="";cpMsg="";cpOpen=false;lastTotal=0;
+    $("doneBox").innerHTML='<div class="ring"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h3>وصلنا طلبك 🌿</h3><p>راح نتواصل وياك على رقمك لتأكيد الطلب وموعد التوصيل.</p><div class="ocode"><span id="ocv">'+esc(r.code)+'</span><button id="ocopy">نسخ</button></div><p>رمز طلبك، احتفظ به للمراجعة.</p><p style="color:var(--cream)">الإجمالي: '+fmt(r.total)+' '+esc(r.currency||"دينار")+'</p>';
+    show("done");draw();sparks();
+  }).catch(function(e){
+    $("orderErr").textContent="تعذّر إرسال الطلب، تحقق من الاتصال وحاول مرة ثانية.";
+    if(window.console)console.warn("ORRIS place_order:",e&&e.message,e&&e.info);
+  }).then(function(){busy=false;b.disabled=false;b.textContent="تأكيد الطلب ✓"});
 };
+$("doneBox").addEventListener("click",function(e){
+  if(e.target.id==="ocopy"){var t=$("ocv").textContent;try{navigator.clipboard.writeText(t);e.target.textContent="تم ✓"}catch(x){}}
+});
+$("doneBtn").onclick=function(){toggle(false);show("cart")};
+function sparks(){
+  var box=$("doneBox");if(!box||(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches))return;
+  for(var i=0;i<14;i++){
+    var d=document.createElement("span");d.className="spark";var a=Math.random()*Math.PI*2,r=50+Math.random()*70;
+    d.style.cssText="left:50%;top:70px;--dx:"+Math.cos(a)*r+"px;--dy:"+Math.sin(a)*r+"px;animation-delay:"+(Math.random()*.25)+"s";
+    box.style.position="relative";box.appendChild(d);setTimeout(function(x){return function(){x.remove()}}(d),1500);
+  }
+}
 
 // ══ تحميل العطور من Supabase ══
 function loadCache(){try{return JSON.parse(localStorage.getItem("orris_shop_cache")||"null")}catch(e){return null}}

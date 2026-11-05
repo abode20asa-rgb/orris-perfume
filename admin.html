@@ -1085,7 +1085,7 @@ function renderOrders(){
     var idx  = orders.indexOf(order);
     var d    = new Date(order.date).toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'});
     var st   = ordSt(order);
-    var items = (order.items||[]).map(function(i,n){ return '<div class="order-item-row">'+(n+1)+'. '+esc(i.name)+' × '+esc(i.qty)+' — '+esc((i.price*i.qty).toLocaleString('en-US'))+' '+esc(i.currency)+'</div>'; }).join('');
+    var items = (order.items||[]).map(function(i,n){ return '<div class="order-item-row">'+(n+1)+'. '+esc(i.name)+(i.size?' ('+esc(i.size)+')':'')+' × '+esc(i.qty)+' — '+esc((i.price*i.qty).toLocaleString('en-US'))+' '+esc(i.currency)+'</div>'; }).join('');
     return '<div class="order-card">' +
       '<div class="order-top">' +
         '<div><div class="order-id"># '+esc(order.id||idx+1)+(order.code?' <b class="order-code">🔖 '+esc(order.code)+'</b>':'')+(order.manual?' <small style="opacity:.8;font-weight:700">📝 مضاف يدوياً</small>':'')+'</div><div class="order-cust">👤 '+esc(order.customer&&order.customer.name||'—')+'</div><div class="order-phone">📱 '+esc(order.customer&&order.customer.phone||'—')+'</div></div>' +
