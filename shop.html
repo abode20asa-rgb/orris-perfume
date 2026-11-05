@@ -648,7 +648,8 @@ function calc(){
   var L=lines(),sub=0,cur="دينار";
   L.forEach(function(l){sub+=l.unit*l.qty;cur=l.p.cur});
   var disc=0;
-  if(coupon&&sub){disc=coupon.type==="percent"?Math.round(sub*coupon.value/100):coupon.value;disc=Math.max(0,Math.min(disc,sub))}
+  var qn=L.reduce(function(a,l){return a+l.qty},0);
+  if(coupon&&sub&&qn>=2){disc=coupon.type==="percent"?Math.round(sub*coupon.value/100):coupon.value;disc=Math.max(0,Math.min(disc,sub))}
   return {L:L,sub:sub,disc:disc,total:sub-disc,cur:cur,n:L.reduce(function(a,l){return a+l.qty},0)};
 }
 function countUp(el,to){
@@ -676,7 +677,7 @@ function cartView(){
       '<div class="cside"><div class="cstep"><button data-m="'+esc(l.k)+'" aria-label="نقص">−</button><span>'+l.qty+'</span><button data-p="'+esc(l.k)+'" aria-label="زيادة">+</button></div><span class="cline">'+fmt(l.unit*l.qty)+'</span><button class="crm" data-rm="'+esc(l.k)+'">حذف</button></div></div>';
   }).join("");
   h+=coupon
-    ? '<div class="ticket"><div class="tk-ok"><span>🏷️ تم تطبيق الكود <b dir="ltr">'+esc(coupon.code)+'</b></span><button id="cpRm">إزالة</button></div></div>'
+    ? '<div class="ticket"><div class="tk-ok"><span>🏷️ تم تطبيق الكود <b dir="ltr">'+esc(coupon.code)+'</b></span><button id="cpRm">إزالة</button></div>'+(c.n<2?'<p class="tk-msg">الخصم يشتغل عند طلب عطرين أو أكثر.</p>':'')+'</div>'
     : '<div class="ticket'+(cpOpen?' open':'')+'"><button class="tk-h" id="cpToggle"><span>🎟️ عندك كود خصم؟</span><span>⌄</span></button><div class="tk-b"><div class="tk-row"><input id="cpIn" maxlength="30" placeholder="CODE" autocomplete="off" value="'+esc(cpVal)+'"><button id="cpApply">تطبيق</button></div><p class="tk-msg" id="cpMsg">'+esc(cpMsg)+'</p></div></div>';
   h+='<label class="fld"><span>ملاحظات إضافية <em>(اختياري)</em></span><textarea id="notesIn" maxlength="300" placeholder="اكتب ملاحظتك هنا إن أردت…">'+esc(notes)+'</textarea></label>';
   $("cartBody").innerHTML=h;
@@ -749,7 +750,7 @@ function normPhone(v){
   if(/^7\d{9}$/.test(d))return "0"+d;
   return null;
 }
-var ERRS={closed:"المتجر مغلق حالياً.",name:"اكتب اسمك.",phone:"رقم الهاتف غير صحيح (مثال 07712345678).",province:"اختر المحافظة.",area:"اختر مركز المحافظة أو قضاء.","address":"اكتب العنوان.",items:"تحقق من السلة.",item:"عطر تغيّر أو حُذف، أغلق السلة وحدّث الصفحة.",soldout:"أحد العطور نفذ.",price:"أحد العطور بدون سعر.",coupon:"كود الخصم غير صالح.",coupon_used:"استخدمت هذا الكود من قبل.",rate:"أرسلت طلبات كثيرة، حاول بعد قليل.",busy:"الضغط عالي حالياً، حاول بعد قليل."};
+var ERRS={closed:"المتجر مغلق حالياً.",name:"اكتب اسمك.",phone:"رقم الهاتف غير صحيح (مثال 07712345678).",province:"اختر المحافظة.",area:"اختر مركز المحافظة أو قضاء.","address":"اكتب العنوان.",items:"تحقق من السلة.",item:"عطر تغيّر أو حُذف، أغلق السلة وحدّث الصفحة.",soldout:"أحد العطور نفذ.",price:"أحد العطور بدون سعر.",coupon:"كود الخصم غير صالح.",coupon_used:"استخدمت هذا الكود من قبل.",coupon_min:"كود الخصم يشتغل عند طلب عطرين أو أكثر.",rate:"أرسلت طلبات كثيرة، حاول بعد قليل.",busy:"الضغط عالي حالياً، حاول بعد قليل."};
 function markBad(id,bad){$(id).className="fld"+(bad?" bad":"")}
 $("placeBtn").onclick=function(){
   if(busy)return;
