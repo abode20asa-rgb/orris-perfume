@@ -336,6 +336,7 @@ footer a{color:var(--gold)}
   var panel=document.createElement('nav');panel.id='menuPanel';panel.setAttribute('aria-label','القائمة');
   panel.innerHTML=
     '<button type="button" data-act="support"><span class="ic">💬</span>الدعم<span class="bd" id="menuBd">1</span></button>'+
+    '<button type="button" data-act="orders"><span class="ic">📦</span>طلباتي</button>'+
     '<button type="button" data-act="data"><span class="ic">👤</span>بياناتي</button>'+
     '<button type="button" data-act="review"><span class="ic">⭐</span>رأيك</button>'+
     '<a href="privacy.html"><span class="ic">🔒</span>سياسة الخصوصية</a>';
@@ -363,7 +364,7 @@ footer a{color:var(--gold)}
     panel.addEventListener('click',function(e){
       var b=e.target.closest&&e.target.closest('[data-act]');if(!b)return;
       var a=b.getAttribute('data-act');
-      if(a==='support')openSupport();else if(a==='data')openData();else if(a==='review')openReview();
+      if(a==='support')openSupport();else if(a==='data')openData();else if(a==='review')openReview();else if(a==='orders')openOrders();
     });
     $('omX').onclick=closeModal;
     modal.addEventListener('click',function(e){if(e.target===modal)closeModal()});
@@ -394,6 +395,56 @@ footer a{color:var(--gold)}
           try{rpc('save_customer',{p_name:n,p_phone:ph,p_province:$('dV').value,p_area:$('dA').value,p_address:$('dD').value.trim()}).catch(function(){})}catch(e){}
           msg('dM','✓ تم حفظ بياناتك على هذا الجهاز.',0,1);
         };
+      });
+  }
+  /* ───────── طلباتي ───────── */
+  function openOrders(){
+    var OK='orris_my_orders';
+    var STT={
+      pending:['🟡','في انتظار القبول','وصلنا طلبك وننتظر موافقة الإدارة عليه. أول ما يتقبل يبدأ تجهيزه.'],
+      received:['🔵','جاري تجهيز الطلب','تم قبول طلبك وهسه نجهّزه ونغلّفه حتى يطلع للتوصيل.'],
+      delivered:['🟢','تم التوصيل','وصل طلبك لعنوانك. نتمنى يعجبك، وشاركنا رأيك 🌿']
+    };
+    function saved(){var a=jget(OK,[]);return Array.isArray(a)?a:[]}
+    function remember(code,ph){var a=saved().filter(function(x){return x.code!==code});a.unshift({code:code,phone:ph});jset(OK,a.slice(0,10))}
+    function card(r){
+      var s=STT[r.status]||STT.pending;
+      var items=(r.items||[]).map(function(i){return '<li>'+esc(i.name)+' — '+esc(i.size)+' × '+esc(String(i.qty))+'</li>'}).join('');
+      return '<div style="border:1px solid var(--line,#22301f);border-radius:8px;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.02)">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b dir="ltr">'+esc(r.code)+'</b><span>'+s[0]+' '+s[1]+'</span></div>'+
+        '<p style="margin:0 0 8px;font-size:14px;line-height:1.8;color:var(--muted,#a9a592)">'+s[2]+'</p>'+
+        '<ul style="margin:0 0 8px;padding:0 18px;font-size:14px;line-height:1.9">'+items+'</ul>'+
+        '<div style="font-size:14px">الإجمالي: <b>'+esc(String(r.total))+'</b> '+esc(r.currency||'دينار')+'</div></div>';
+    }
+    function load(code,ph,manual){
+      return rpc('track_order',{p_code:code,p_phone:ph}).then(function(r){
+        if(!r||!r.found){if(manual)msg('oM','ما لقينا طلب بهذا الرمز ورقم الهاتف.',1);return null}
+        remember(r.code,ph);return r;
+      }).catch(function(){if(manual)msg('oM','تعذّر الاتصال، حاول لاحقاً.',1);return null});
+    }
+    function showAll(){
+      var list=saved();
+      if(!list.length){$('oL').innerHTML='<p class="t">ما عندك طلبات محفوظة. اكتب رمز طلبك أعلاه.</p>';return}
+      $('oL').innerHTML='<p class="t">جارٍ التحميل…</p>';
+      Promise.all(list.map(function(x){return load(x.code,x.phone,false)})).then(function(rs){
+        rs=rs.filter(Boolean);
+        $('oL').innerHTML=rs.length?rs.map(card).join(''):'<p class="t">تعذّر تحميل طلباتك حالياً.</p>';
+      });
+    }
+    openModal('طلباتي',
+      '<p class="t">اكتب رمز طلبك ورقم هاتفك لتعرف وين وصل طلبك.</p>'+
+      '<div class="two"><label class="f"><span>رمز الطلب</span><input id="oC" maxlength="12" dir="ltr" autocomplete="off" style="text-transform:uppercase"></label>'+
+      '<label class="f"><span>رقم الهاتف</span><input id="oP" type="tel" inputmode="tel" dir="ltr" placeholder="07XXXXXXXXX" style="text-align:right" value="'+esc(jget(CK,{}).phone||'')+'"></label></div>'+
+      '<button class="pb" id="oS">تتبّع طلبي</button><p class="ms" id="oM" role="status"></p><div id="oL" style="margin-top:12px"></div>',
+      function(){
+        $('oS').onclick=function(){
+          var code=$('oC').value.trim().toUpperCase(),ph=normPhone($('oP').value);
+          if(!code)return msg('oM','اكتب رمز الطلب.',1);
+          if(!ph)return msg('oM','رقم الهاتف غير صحيح (مثال 07712345678).',1);
+          msg('oM','جارٍ البحث…');
+          load(code,ph,true).then(function(r){if(r){msg('oM','');showAll()}});
+        };
+        showAll();
       });
   }
   function msg(id,t,bad,ok){var m=$(id);if(!m)return;m.textContent=t;m.className='ms'+(bad?' bad':ok?' ok':'')}
@@ -715,6 +766,7 @@ $("placeBtn").onclick=function(){
   OrrisCloud.rpc("place_order",{p_order:payload}).then(function(r){
     if(!r||!r.ok){$("orderErr").textContent=ERRS[r&&r.error]||"تعذّر إرسال الطلب، حاول لاحقاً.";return}
     try{localStorage.setItem("orris_cust",JSON.stringify({name:info.name,phone:ph,prov:info.prov,area:info.area,addr:info.addr}))}catch(e){}
+    try{var mo=JSON.parse(localStorage.getItem("orris_my_orders")||"[]");if(!Array.isArray(mo))mo=[];mo.unshift({code:r.code,phone:ph});localStorage.setItem("orris_my_orders",JSON.stringify(mo.slice(0,10)))}catch(e){}
     cart={};save();coupon=null;notes="";cpVal="";cpMsg="";cpOpen=false;lastTotal=0;
     $("doneBox").innerHTML='<div class="ring"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h3>وصلنا طلبك 🌿</h3><p>راح نتواصل وياك على رقمك لتأكيد الطلب وموعد التوصيل.</p><div class="ocode"><span id="ocv">'+esc(r.code)+'</span><button id="ocopy">نسخ</button></div><p>رمز طلبك، احتفظ به للمراجعة.</p><p style="color:var(--cream)">الإجمالي: '+fmt(r.total)+' '+esc(r.currency||"دينار")+'</p>';
     show("done");draw();sparks();
