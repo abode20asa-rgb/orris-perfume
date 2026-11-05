@@ -232,6 +232,7 @@ footer a{color:var(--gold)}
           if(!n)return msg('dM','اكتب اسمك.',1);
           if(!ph)return msg('dM','رقم الهاتف غير صحيح (مثال 07712345678).',1);
           jset(CK,{name:n,phone:ph,prov:$('dV').value,area:$('dA').value.trim(),addr:$('dD').value.trim()});
+          try{rpc('save_customer',{p_name:n,p_phone:ph,p_province:$('dV').value,p_area:$('dA').value.trim(),p_address:$('dD').value.trim()}).catch(function(){})}catch(e){}
           msg('dM','✓ تم حفظ بياناتك على هذا الجهاز.',0,1);
         };
       });
