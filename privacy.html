@@ -244,52 +244,55 @@ footer a{color:var(--gold)}
   /* ───────── طلباتي ───────── */
   function openOrders(){
     var OK='orris_my_orders';
+    var ORD=['pending','received','delivered'];
     var STT={
-      pending:['🟡','في انتظار القبول','وصلنا طلبك وننتظر موافقة الإدارة عليه. أول ما يتقبل يبدأ تجهيزه.'],
-      received:['🔵','جاري تجهيز الطلب','تم قبول طلبك وهسه نجهّزه ونغلّفه حتى يطلع للتوصيل.'],
-      delivered:['🟢','تم التوصيل','وصل طلبك لعنوانك. نتمنى يعجبك، وشاركنا رأيك 🌿']
+      pending:{n:'في انتظار القبول',c:'#d9a441',d:'وصلنا طلبك وننتظر موافقة الإدارة عليه. أول ما يتقبل يبدأ تجهيزه.'},
+      received:{n:'جاري تجهيز الطلب',c:'#4f8ef7',d:'تم قبول طلبك وهسه نجهّزه ونغلّفه حتى يطلع للتوصيل.'},
+      delivered:{n:'تم التوصيل',c:'#3fb86f',d:'وصل طلبك لعنوانك. نتمنى يعجبك، وشاركنا رأيك 🌿'}
     };
     function saved(){var a=jget(OK,[]);return Array.isArray(a)?a:[]}
-    function remember(code,ph){var a=saved().filter(function(x){return x.code!==code});a.unshift({code:code,phone:ph});jset(OK,a.slice(0,10))}
+    function fetchOne(x){
+      return rpc('track_order',{p_code:x.code,p_phone:x.phone}).then(function(r){return r&&r.found?r:null}).catch(function(){return undefined});
+    }
+    function steps(st){
+      var at=ORD.indexOf(st);
+      return '<div style="display:flex;align-items:flex-start;margin:12px 0 10px">'+ORD.map(function(k,i){
+        var on=i<=at,s=STT[k];
+        return '<div style="flex:1;text-align:center;position:relative">'+
+          (i?'<span style="position:absolute;top:13px;right:50%;width:100%;height:2px;background:'+(i<=at?STT[ORD[i]].c:'rgba(255,255,255,.12)')+'"></span>':'')+
+          '<span style="position:relative;display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:'+(on?s.c:'var(--bg,#07090c)')+';border:2px solid '+(on?s.c:'rgba(255,255,255,.2)')+';color:'+(on?'#07090c':'var(--muted,#a9a592)')+'">'+(i<at?'✓':(i+1))+'</span>'+
+          '<div style="font-size:11px;margin-top:5px;color:'+(on?'var(--cream,#efe6d2)':'var(--muted,#a9a592)')+'">'+s.n+'</div></div>';
+      }).join('')+'</div>';
+    }
     function card(r){
       var s=STT[r.status]||STT.pending;
       var items=(r.items||[]).map(function(i){return '<li>'+esc(i.name)+' — '+esc(i.size)+' × '+esc(String(i.qty))+'</li>'}).join('');
-      return '<div style="border:1px solid var(--line,#22301f);border-radius:8px;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.02)">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b dir="ltr">'+esc(r.code)+'</b><span>'+s[0]+' '+s[1]+'</span></div>'+
-        '<p style="margin:0 0 8px;font-size:14px;line-height:1.8;color:var(--muted,#a9a592)">'+s[2]+'</p>'+
-        '<ul style="margin:0 0 8px;padding:0 18px;font-size:14px;line-height:1.9">'+items+'</ul>'+
+      var dt='';try{dt=new Date(r.date).toLocaleDateString('ar',{day:'numeric',month:'long'})}catch(e){}
+      return '<div style="border:1px solid var(--line,#22301f);border-right:4px solid '+s.c+';border-radius:8px;padding:12px 14px;margin-bottom:12px;background:rgba(255,255,255,.02)">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--muted,#a9a592)">رمز الطلب'+(dt?' · '+esc(dt):'')+'</span><b dir="ltr" style="letter-spacing:2px;color:var(--gold,#b58a50);font-size:18px">'+esc(r.code)+'</b></div>'+
+        steps(r.status)+
+        '<p style="margin:0 0 8px;font-size:14px;line-height:1.8"><b style="color:'+s.c+'">'+s.n+':</b> '+s.d+'</p>'+
+        '<ul style="margin:0 0 8px;padding:0 18px;font-size:14px;line-height:1.9;color:var(--muted,#a9a592)">'+items+'</ul>'+
         '<div style="font-size:14px">الإجمالي: <b>'+esc(String(r.total))+'</b> '+esc(r.currency||'دينار')+'</div></div>';
     }
-    function load(code,ph,manual){
-      return rpc('track_order',{p_code:code,p_phone:ph}).then(function(r){
-        if(!r||!r.found){if(manual)msg('oM','ما لقينا طلب بهذا الرمز ورقم الهاتف.',1);return null}
-        remember(r.code,ph);return r;
-      }).catch(function(){if(manual)msg('oM','تعذّر الاتصال، حاول لاحقاً.',1);return null});
+    function legend(){
+      return '<div style="margin-top:6px;padding-top:12px;border-top:1px dashed var(--line,#22301f)"><div style="font-size:14px;margin-bottom:8px;color:var(--gold,#b58a50)">شنو تعني كل حالة؟</div>'+
+        ORD.map(function(k){var s=STT[k];return '<div style="display:flex;gap:8px;font-size:13px;line-height:1.7;margin-bottom:6px;color:var(--muted,#a9a592)"><i style="flex:none;width:10px;height:10px;border-radius:50%;margin-top:7px;background:'+s.c+'"></i><span><b style="color:var(--cream,#efe6d2)">'+s.n+':</b> '+s.d+'</span></div>'}).join('')+'</div>';
     }
     function showAll(){
-      var list=saved();
-      if(!list.length){$('oL').innerHTML='<p class="t">ما عندك طلبات محفوظة. اكتب رمز طلبك أعلاه.</p>';return}
-      $('oL').innerHTML='<p class="t">جارٍ التحميل…</p>';
-      Promise.all(list.map(function(x){return load(x.code,x.phone,false)})).then(function(rs){
-        rs=rs.filter(Boolean);
-        $('oL').innerHTML=rs.length?rs.map(card).join(''):'<p class="t">تعذّر تحميل طلباتك حالياً.</p>';
+      var list=saved(),L=$('oL');if(!L)return;
+      if(!list.length){L.innerHTML='<div style="text-align:center;padding:26px 6px"><div style="font-size:34px">📦</div><p style="margin:8px 0 4px;font-size:17px">ما عندك طلبات بعد</p><p class="t" style="margin:0">أول ما تطلب يظهر طلبك هنا وتتابع حالته.<br>تظهر هنا الطلبات اللي سوّيتها من هذا الجهاز.</p></div>'+legend();return}
+      L.innerHTML='<p class="t">جارٍ التحميل…</p>';
+      Promise.all(list.map(fetchOne)).then(function(rs){
+        var ok=rs.filter(function(r){return r}),fail=rs.some(function(r){return r===undefined});
+        if(!$('oL'))return;
+        $('oL').innerHTML=(ok.length?ok.map(card).join(''):'<p class="t">'+(fail?'تعذّر تحميل طلباتك حالياً، اضغط تحديث.':'ما لقينا طلباتك.')+'</p>')+legend();
       });
     }
-    openModal('طلباتي',
-      '<p class="t">اكتب رمز طلبك ورقم هاتفك لتعرف وين وصل طلبك.</p>'+
-      '<div class="two"><label class="f"><span>رمز الطلب</span><input id="oC" maxlength="12" dir="ltr" autocomplete="off" style="text-transform:uppercase"></label>'+
-      '<label class="f"><span>رقم الهاتف</span><input id="oP" type="tel" inputmode="tel" dir="ltr" placeholder="07XXXXXXXXX" style="text-align:right" value="'+esc(jget(CK,{}).phone||'')+'"></label></div>'+
-      '<button class="pb" id="oS">تتبّع طلبي</button><p class="ms" id="oM" role="status"></p><div id="oL" style="margin-top:12px"></div>',
-      function(){
-        $('oS').onclick=function(){
-          var code=$('oC').value.trim().toUpperCase(),ph=normPhone($('oP').value);
-          if(!code)return msg('oM','اكتب رمز الطلب.',1);
-          if(!ph)return msg('oM','رقم الهاتف غير صحيح (مثال 07712345678).',1);
-          msg('oM','جارٍ البحث…');
-          load(code,ph,true).then(function(r){if(r){msg('oM','');showAll()}});
-        };
-        showAll();
-      });
+    openModal('📦 طلباتي',
+      '<p class="t" style="text-align:center">هنا تشوف حالة طلباتك، والحالة تتحدث تلقائياً من الإدارة.</p><div id="oL"></div>'+
+      '<div style="display:flex;gap:10px;margin-top:14px"><button class="pb" id="oR" style="flex:2">🔄 تحديث</button><button class="sb" id="oX" style="flex:1;margin-top:0">إغلاق</button></div>',
+      function(){$('oR').onclick=showAll;$('oX').onclick=closeModal;showAll()});
   }
   function msg(id,t,bad,ok){var m=$(id);if(!m)return;m.textContent=t;m.className='ms'+(bad?' bad':ok?' ok':'')}
 
