@@ -210,8 +210,8 @@ footer a{color:var(--gold)}
     <div class="tleft"><button class="cartbtn" id="openCart" aria-label="السلة">السلة <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L21 7H6"/></svg><b id="count">0</b></button></div>
   </header>
   <main>
-    <a class="back" href="index.html">← الرئيسية</a>
-    <h2>العطور</h2>
+    <a class="back" href="sections.html">← الأقسام</a>
+    <h2 id="secTitle">العطور</h2>
     <p class="sub">أضف ما يعجبك إلى السلة ثم أرسل الطلب للاستفسار.</p>
     <div class="chips" id="chips"></div>
     <div class="grid" id="grid"></div>
@@ -568,7 +568,7 @@ function norm(arr){
       if(num(p.price30)>0)sz.push({label:"30ml",price:num(p.price30),old:num(p.oldPrice30)});
     }
     if(!sz.length)sz.push({label:"50ml",price:0,old:0});
-    return {i:i,name:String(p.name),en:p.nameEn||"",cat:p.type||"للجنسين",cur:p.currency||"دينار",sz:sz,
+    return {i:i,name:String(p.name),en:p.nameEn||"",cat:p.type||"للجنسين",types:(Array.isArray(p.types)&&p.types.length)?p.types:(p.type==="للجنسين"||!p.type?["رجالي","نسائي"]:[p.type]),cur:p.currency||"دينار",sz:sz,
       badge:p.badge||"",img:/^(data:image\/|https?:\/\/)/.test(p.image||"")?p.image:"",desc:p.description||""};
   });
 }
@@ -593,7 +593,7 @@ function grid(){
     var sizes='<button class="szbtn'+(sz?' set':'')+'" data-szopen="'+p.i+'">'+(sz?'الحجم: '+esc(labelOf(p,sz))+' ✓ (تغيير)':'نوع الحجم')+'</button>';
     var price=pr?'<div class="price">'+(old>pr?'<s>'+fmt(old)+'</s>':'')+fmt(pr)+' '+esc(p.cur)+'</div>':'';
     var act=so?'<button class="add" disabled>نفذ</button>':(sz&&cart[k]?'<div class="step"><button data-gm="'+esc(k)+'" aria-label="نقص">−</button><span>'+cart[k]+'</span><button data-gp="'+esc(k)+'" aria-label="زيادة">+</button></div>':'<button class="add" data-add="'+p.i+'">أضف إلى السلة</button>');
-    return '<div class="card">'+img+bd+'<h3>'+esc(p.name)+'</h3>'+(p.en?'<small style="direction:ltr;text-align:right">'+esc(p.en)+'</small>':'')+'<small>'+esc(p.cat)+'</small>'+(p.desc?'<p class="desc">'+esc(p.desc)+'</p>':'')+price+(so?'':sizes+'<div class="szerr"></div>')+act+'</div>';
+    return '<div class="card">'+img+bd+'<h3>'+esc(p.name)+'</h3>'+(p.en?'<small style="direction:ltr;text-align:right">'+esc(p.en)+'</small>':'')+'<small>'+esc(p.types.join(' • '))+'</small>'+(p.desc?'<p class="desc">'+esc(p.desc)+'</p>':'')+price+(so?'':sizes+'<div class="szerr"></div>')+act+'</div>';
   }).join("");
 }
 function find(k){var n=k.split("||")[0];return PRODUCTS.filter(function(x){return x.name===n})[0]}
@@ -801,8 +801,10 @@ function setCats(sec){
     return true}));
   if(CATS.indexOf(cat)<0)cat="الكل";
 }
+var SECS={men:{t:"رجالي",h:"عطور رجالية"},women:{t:"نسائي",h:"عطور نسائية"},eco:{t:"اقتصادي",h:"العطور الاقتصادية"}};
+var SECTION=SECS[new URLSearchParams(location.search).get("c")]||null;
 function visible(sec){
-  return PRODUCTS;
+  return SECTION?PRODUCTS.filter(function(p){return p.types.indexOf(SECTION.t)>=0}):PRODUCTS;
 }
 function apply(arr,sec){
   PRODUCTS=norm(arr);
@@ -831,6 +833,7 @@ async function init(){
     if(window.console)console.warn("ORRIS shop:",e&&e.message,e&&e.info);
   }
 }
+if(SECTION){$("secTitle").textContent=SECTION.h;$("chips").style.display="none";document.title="ORRIS | "+SECTION.h}
 chips();draw();init();
 </script>
 </body>
