@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة التحكم | أوريس</title>
+<title>لوحة التحكم | أوراس</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--pink:#07090c;--pink-deep:#b58a50}
@@ -362,7 +362,7 @@ button{border-radius:4px}
   <div class="lock-box">
     <div class="lock-icon">🔐</div>
     <h2>لوحة التحكم <small style="font-size:.6rem;opacity:.55;font-weight:400">v5</small></h2>
-    <p>أوريس للعطور — الدخول للمشرف فقط</p>
+    <p>أوراس للعطور — الدخول للمشرف فقط</p>
     <input type="email" id="emailInput" class="lock-input" placeholder="الإيميل" dir="ltr" autocomplete="username" style="letter-spacing:0">
     <input type="password" id="passInput" class="lock-input" placeholder="كلمة السر" autocomplete="current-password"
            onkeydown="if(event.key==='Enter')checkPass()">
@@ -375,7 +375,7 @@ button{border-radius:4px}
 <div id="adminPanel">
   <header>
     <img src="images/logo.jpg" alt="Logo" class="logo" onerror="this.style.display='none'">
-    <div class="header-title">⚙️ لوحة التحكم — أوريس للعطور</div>
+    <div class="header-title">⚙️ لوحة التحكم — أوراس للعطور</div>
     <div class="hd-end">
       <div class="dots-wrap">
         <button type="button" class="dots-btn" id="dotsBtn" aria-label="القائمة" aria-haspopup="true" aria-expanded="false" onclick="dotsToggle(event)"><i></i><i></i><i></i></button>
@@ -661,7 +661,7 @@ button{border-radius:4px}
   <div class="ai-box">
     <div class="ai-top"><h2>🤖 الذكاء الاصطناعي</h2><button type="button" class="ai-x" onclick="aiClose()" aria-label="إغلاق">✕</button></div>
     <div class="ai-usage" id="aiUsage"><div class="uh"><span>📊 الطلبات المتبقية اليوم</span><span><small id="aiUsageTime"></small> <button type="button" class="ai-mini" style="padding:4px 12px" onclick="aiUsageLoad()">🔄</button></span></div><div id="aiUsageBody">⏳ جاري التحميل…</div></div>
-    <div class="ai-note">مساعد أوريس يشتغل <b>هجين</b>: أول شي يجاوب من القائمة، وإذا ما لكى جواب يجاوب الذكاء الاصطناعي <b>كرد عادي بدون ما يبين اسمه أو شعاره للزبون</b>.</div>
+    <div class="ai-note">مساعد أوراس يشتغل <b>هجين</b>: أول شي يجاوب من القائمة، وإذا ما لكى جواب يجاوب الذكاء الاصطناعي <b>كرد عادي بدون ما يبين اسمه أو شعاره للزبون</b>.</div>
     <div id="aiStatus" class="ai-note" style="display:none"></div>
     <div class="ai-sw"><span>تشغيل الذكاء الاصطناعي بالمساعد</span><label class="switch"><input type="checkbox" id="ai_enabled"><span class="slider-sw"></span></label></div>
     <div class="ai-tabs" id="aiTabs"></div>
@@ -953,11 +953,6 @@ function updateStatusBar(isOpen){
   document.getElementById('toggleLabel').textContent = isOpen ? 'تشغيل' : 'إيقاف';
 }
 
-function initSiteToggle(){
-  OrrisCloud.rpc('site_status').then(function(r){ updateStatusBar(r && r.open !== false); })
-    .catch(function(){ updateStatusBar(true); });
-}
-
 // ══ Helpers ══
 function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function tryParse(k, f){ try{ var d=localStorage.getItem(k); return d ? JSON.parse(d) : f; } catch(e){ return f; } }
@@ -1116,7 +1111,7 @@ function deleteOrder(i){ if(!confirm('حذف الطلب؟'))return; var o=tryPar
 function resendWA(i){
   var order = tryParse(ORDERS_KEY,[])[i]; if(!order)return;
   var now   = new Date(order.date).toLocaleString('ar',{dateStyle:'long',timeStyle:'short'});
-  var msg   = '🌿 *طلب — أوريس للعطور*\n━━━━━━━━━━━━━━━━━━━━\n👤 *الاسم:* '+(order.customer&&order.customer.name||'—')+'\n📱 *الهاتف:* '+(order.customer&&order.customer.phone||'—')+'\n━━━━━━━━━━━━━━━━━━━━\n🛒 *العطور:*\n';
+  var msg   = '🌿 *طلب — أوراس للعطور*\n━━━━━━━━━━━━━━━━━━━━\n👤 *الاسم:* '+(order.customer&&order.customer.name||'—')+'\n📱 *الهاتف:* '+(order.customer&&order.customer.phone||'—')+'\n━━━━━━━━━━━━━━━━━━━━\n🛒 *العطور:*\n';
   (order.items||[]).forEach(function(item,n){ msg+=(n+1)+'. '+item.name+' × '+item.qty+' ← '+(item.price*item.qty).toLocaleString('en-US')+' '+item.currency+'\n'; });
   if(order.notes) msg+='📝 *ملاحظات:* '+order.notes+'\n';
   msg+='━━━━━━━━━━━━━━━━━━━━\n🏷️ *كود الخصم:* '+(order.coupon&&order.coupon.code?order.coupon.code:'بدون كود خصم')+'\n💰 *الإجمالي:* '+((order.total||0).toLocaleString('en-US'))+' '+(order.currency||'دينار')+'\n📅 '+now;
@@ -1674,16 +1669,16 @@ async function pushDelete(id){
 
 // ── عبارات جاهزة ──
 var PN_TEMPLATES=[
- {n:'عطور فخمة',t:'عطور فخمة بانتظارك 🌿',b:'تشكيلة فواحة تدوم طول اليوم، اكتشفها الآن من أوريس.'},
+ {n:'عطور فخمة',t:'عطور فخمة بانتظارك 🌿',b:'تشكيلة فواحة تدوم طول اليوم، اكتشفها الآن من أوراس.'},
  {n:'أصناف جديدة',t:'وصلت أصناف جديدة ✨',b:'عطور جديدة بثبات عالي ورائحة تلفت الانتباه، تعال شوف الجديد.'},
  {n:'فواحة وثابتة',t:'رائحة تدوم وتبقى 💖',b:'عطور فواحة وثابتة تخليك مميز بكل مكان، جرّب عطرك القادم.'},
  {n:'عطر الأكثر مبيعاً',t:'الأكثر طلباً هالأسبوع ⭐',b:'عطور حازت على إعجاب الزبائن، شوف شنو اختاروا.'},
- {n:'للهدايا',t:'هدية تنذكر 🎁',b:'عطر من أوريس هو أجمل هدية لمن تحب، اختار هديتك الآن.'},
+ {n:'للهدايا',t:'هدية تنذكر 🎁',b:'عطر من أوراس هو أجمل هدية لمن تحب، اختار هديتك الآن.'},
  {n:'كمية محدودة',t:'الكمية محدودة 🔥',b:'بعض العطور قاربت على النفاذ، لا تفوّت عطرك المفضل.'},
  {n:'صباح الخير',t:'صباحك عطر 🌷',b:'ابدأ يومك برائحة تحبها، عطورك المفضلة بانتظارك.'},
  {n:'مساء الخير',t:'مساؤك ورد 🌹',b:'اختار عطر السهرة اللي يليق بك، تصفح تشكيلتنا الآن.'},
  {n:'السلة بانتظارك',t:'سلتك بانتظارك 🛍️',b:'عطورك جاهزة بالسلة، أكمل طلبك قبل ما تنفذ الكمية.'},
- {n:'شكراً لثقتكم',t:'شكراً لثقتكم 💕',b:'نفتخر بكم في أوريس، وبانتظاركم دائماً بأجمل العطور.'}
+ {n:'شكراً لثقتكم',t:'شكراً لثقتكم 💕',b:'نفتخر بكم في أوراس، وبانتظاركم دائماً بأجمل العطور.'}
 ];
 (function(){
   var box=document.getElementById('pn_templates'); if(!box) return;

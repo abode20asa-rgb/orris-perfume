@@ -224,7 +224,7 @@ footer a{color:var(--gold)}
     <p>للاستفسار راسلنا على إنستغرام</p>
     <p><a href="privacy.html">سياسة الخصوصية</a></p>
     <p><a href="https://www.instagram.com/orris.perfume1" rel="noopener" target="_blank">@orris.perfume1</a></p>
-    <p style="margin-top:22px;font-size:14px">جميع الحقوق محفوظة © 2026 أوريس للعطور | ORRIS PERFUME — جميع الحقوق محفوظة</p>
+    <p style="margin-top:22px;font-size:14px">جميع الحقوق محفوظة © 2026 أوراس للعطور | ORRIS PERFUME — جميع الحقوق محفوظة</p>
   </footer>
 </div>
 <div id="szModal" role="dialog" aria-modal="true" aria-label="نوع الحجم"><div class="box"><h3 id="szTitle"></h3><p class="hint">اختر الحجم ثم اضغط «تم» للحفظ</p><div id="szOpts"></div><button id="szDone" disabled>تم</button><button id="szClose">إلغاء</button></div></div>
@@ -846,9 +846,9 @@ chips();draw();init();
   var KEY=SEC==="رجالي"?"men":SEC==="نسائي"?"women":SEC==="اقتصادي"?"eco":"";
   var G=KEY==="women"?"f":KEY==="men"?"m":"n";
   var HELLO={
-    f:"أهلاً بيج بأوريس 🌿 احجيلي شنو تحبين من عطور، وأنا أرشحلج الأنسب.",
-    m:"أهلاً بيك بأوريس 🌿 احجيلي شنو تحب من عطور، وأنا أرشحلك الأنسب.",
-    n:"أهلاً بيك بأوريس 🌿 احجيلي شنو تحب من عطور، وأنا أرشحلك الأنسب."
+    f:"أهلاً بيج بأوراس 🌿 احجيلي شنو تحبين من عطور، وأنا أرشحلج الأنسب.",
+    m:"أهلاً بيك بأوراس 🌿 احجيلي شنو تحب من عطور، وأنا أرشحلك الأنسب.",
+    n:"أهلاً بيك بأوراس 🌿 احجيلي شنو تحب من عطور، وأنا أرشحلك الأنسب."
   };
   var SUG={
     f:["عندي جامعة باجر","عندي حفلة وأريد عطر فواح","أريد عطر هادئ وناعم"],
@@ -873,10 +873,10 @@ chips();draw();init();
       .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,j:j}})})
       .then(function(x){
         var t=x.ok&&x.j&&x.j.text?String(x.j.text):"";
-        w.textContent=t||"تعذّر الرد حالياً، جرّب بعد شوية 🌿";
+        if(!t&&window.console)console.warn("ORRIS AI:",x.j&&x.j.error);w.textContent=t||("تعذّر الرد حالياً، جرّب بعد شوية 🌿"+(/[?&]debug=1/.test(location.search)&&x.j&&x.j.error?"\n["+x.j.error+"]":""));
         if(t){hist.push({r:"u",t:q});hist.push({r:"bot",t:t})}
       })
-      .catch(function(){w.textContent="تعذّر الاتصال، جرّب بعد شوية 🌿"})
+      .catch(function(e){if(window.console)console.warn("ORRIS AI:",e);w.textContent="تعذّر الاتصال، جرّب بعد شوية 🌿"+(/[?&]debug=1/.test(location.search)?"\n[فشل الاتصال بالوسيط — تحقق من ALLOWED_ORIGIN ورابط الوسيط]":"")})
       .then(function(){setTimeout(function(){busy=false;sendBtn.disabled=false},1500);msgs.scrollTop=msgs.scrollHeight});
   }
   function build(){
