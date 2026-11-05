@@ -21,7 +21,7 @@ header{display:flex;justify-content:space-between;align-items:center;padding:20p
 .logo{font-family:'Amiri',serif;letter-spacing:.35em;font-size:22px}
 .hbtns{display:flex;gap:16px;align-items:center;color:var(--muted);font-size:15px}
 .hbtns a:hover,.hbtns button:hover{color:var(--cream)}
-.cartbtn{border:1px solid var(--gold);padding:5px 16px;color:var(--cream)}
+.cartbtn{display:inline-flex;align-items:center;gap:8px;border:1px solid #fff;background:#fff;border-radius:999px;padding:6px 16px;color:#07090c;font-weight:700}.cartbtn svg{width:18px;height:18px;flex:none}
 .cartbtn b{display:inline-block;min-width:22px;margin-right:6px;background:var(--gold);color:#07090c;border-radius:11px;text-align:center;font-weight:500;font-size:14px}
 .view{display:none}.view.on{display:block}
 .hero{position:relative;text-align:center;padding:70px 0 90px;overflow:hidden}
@@ -207,7 +207,7 @@ footer a{color:var(--gold)}
   <header class="topbar">
     <button class="mbtn" id="menuBtn" aria-label="القائمة" aria-expanded="false"><span></span><span></span><span></span></button>
     <a class="logo" href="index.html">ORRIS</a>
-    <div class="tleft"><button class="cartbtn" id="openCart" aria-label="السلة">السلة <b id="count">0</b></button></div>
+    <div class="tleft"><button class="cartbtn" id="openCart" aria-label="السلة">السلة <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L21 7H6"/></svg><b id="count">0</b></button></div>
   </header>
   <main>
     <a class="back" href="index.html">← الرئيسية</a>
