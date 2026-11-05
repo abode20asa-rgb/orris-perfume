@@ -126,9 +126,8 @@ footer a{color:var(--gold)}
   'header.topbar .tleft{justify-self:end;display:flex;gap:12px;align-items:center}'+
   '.mbtn{position:relative;justify-self:start;width:46px;height:46px;border-radius:14px;border:1px solid var(--gold,#b58a50);background:rgba(181,138,80,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;transition:background .2s,transform .2s}'+
   '.mbtn:hover{background:rgba(181,138,80,.2)}.mbtn:active{transform:scale(.94)}'+
-  '.mbtn span{display:block;width:20px;height:2px;border-radius:2px;background:var(--cream,#efe6d2);transition:transform .3s,opacity .2s,width .3s}'+
-  '.mbtn span:nth-child(2){width:14px;align-self:flex-end;margin-right:13px}'+
-  '.mbtn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}'+
+  '.mbtn span{display:block;width:20px;height:2px;flex:none;border-radius:2px;background:var(--cream,#efe6d2);transition:transform .3s,opacity .2s,width .3s}'+
+    '.mbtn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}'+
   '.mbtn.open span:nth-child(2){opacity:0}'+
   '.mbtn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}'+
   '.mdot{position:absolute;top:-3px;left:-3px;width:12px;height:12px;border-radius:50%;background:#ff5a5a;border:2px solid var(--bg,#07090c);display:none}'+
@@ -139,6 +138,7 @@ footer a{color:var(--gold)}
   '#menuPanel a,#menuPanel button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:10px;color:var(--cream,#efe6d2);font:inherit;font-size:16px;text-align:right;text-decoration:none;position:relative;transition:background .15s}'+
   '#menuPanel a:hover,#menuPanel button:hover{background:rgba(181,138,80,.16)}'+
   '#menuPanel .ic{width:26px;text-align:center;font-size:18px}'+
+  '#menuPanel a,#menuPanel button,.mbtn{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}'+
   '#menuPanel hr{border:0;border-top:1px solid var(--line,#22301f);margin:6px 8px}'+
   '#menuPanel .bd{margin-right:auto;min-width:20px;height:20px;border-radius:10px;background:#ff5a5a;color:#fff;font-size:12px;display:none;place-items:center;padding:0 6px}'+
   '#menuPanel .bd.on{display:grid}'+
@@ -179,12 +179,12 @@ footer a{color:var(--gold)}
   var back=document.createElement('div');back.id='menuBack';
   var panel=document.createElement('nav');panel.id='menuPanel';panel.setAttribute('aria-label','القائمة');
   panel.innerHTML=
-    '<a href="index.html"><span class="ic">🏠</span>الرئيسية</a>'+
-    '<a href="shop.html"><span class="ic">🛍️</span>العطور</a><hr>'+
     '<button type="button" data-act="support"><span class="ic">💬</span>الدعم<span class="bd" id="menuBd">1</span></button>'+
     '<button type="button" data-act="data"><span class="ic">👤</span>بياناتي</button>'+
-    '<button type="button" data-act="review"><span class="ic">⭐</span>رأيك</button><hr>'+
-    '<a href="privacy.html"><span class="ic">🔒</span>سياسة الخصوصية</a>';
+    '<button type="button" data-act="review"><span class="ic">⭐</span>رأيك</button>'+
+    '<a href="privacy.html"><span class="ic">🔒</span>سياسة الخصوصية</a><hr>'+
+    '<a href="index.html"><span class="ic">🏠</span>الرئيسية</a>'+
+    '<a href="shop.html"><span class="ic">🛍️</span>العطور</a>';
   var modal=document.createElement('div');modal.id='omModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
   modal.innerHTML='<div class="bx"><div class="hd"><h3 id="omT"></h3><button type="button" class="x" id="omX" aria-label="إغلاق">✕</button></div><div class="bd2" id="omB"></div></div>';
   var btn=null,onClose=null;
