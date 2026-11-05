@@ -850,16 +850,51 @@ chips();draw();init();
     m:"أهلاً بيك بأوراس 🌿 احجيلي شنو تحب من عطور، وأنا أرشحلك الأنسب.",
     n:"أهلاً بيك بأوراس 🌿 احجيلي شنو تحب من عطور، وأنا أرشحلك الأنسب."
   };
-  var SUG={
-    f:["عندي جامعة باجر","عندي حفلة وأريد عطر فواح","أريد عطر هادئ وناعم"],
-    m:["عندي جامعة باجر","عندي حفلة وأريد عطر قوي وفواح","أريد عطر هادئ"],
-    n:["عندي جامعة باجر","عندي حفلة وأريد عطر فواح","أريد عطر هادئ"]
-  };
   var proxy="",hist=[],busy=false,box,msgs,inp,sendBtn;
   function el(i){return document.getElementById(i)}
   function add(role,text){
     var d=document.createElement("div");d.className="aim "+(role==="u"?"u":"a");d.textContent=text;
     msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;
+  }
+  /* بطاقات العطور اللي يذكرها المساعد: اسم + صورة + اختيار الحجم + إضافة للسلة */
+  function mentioned(text){
+    var t=String(text||"").toLowerCase(),out=[];
+    PRODUCTS.forEach(function(p){
+      if(p.badge==="soldout")return;
+      var a=t.indexOf(p.name.toLowerCase()),b=p.en?t.indexOf(p.en.toLowerCase()):-1,pos=a>=0?a:b;
+      if(pos>=0)out.push({p:p,pos:pos});
+    });
+    out.sort(function(x,y){return x.pos-y.pos});
+    return out.slice(0,3).map(function(x){return x.p});
+  }
+  function pcard(p){
+    var d=document.createElement("div");d.className="aipc";
+    var pick="",sizes=sizesOf(p).filter(function(x){return x.price>0});
+    var img=p.img?'<img src="'+esc(p.img)+'" alt="">':'<span class="aib"><i></i></span>';
+    var from=sizes.length?Math.min.apply(null,sizes.map(function(x){return x.price})):0;
+    d.innerHTML='<div class="aipc-t"><div class="aipc-i">'+img+'</div><div class="aipc-n"><b>'+esc(p.name)+'</b>'+(p.en?'<small dir="ltr">'+esc(p.en)+'</small>':'')+'<small>'+esc(p.types.join(" • "))+(from?' · يبدأ من '+fmt(from)+' '+esc(p.cur):'')+'</small></div></div>'+
+      '<button type="button" class="aipc-o">اختر الحجم ⌄</button>'+
+      '<div class="aipc-s"><div><div class="aipc-p">'+sizes.map(function(x){return '<button type="button" data-v="'+esc(x.v)+'">'+esc(x.label)+'<em>'+fmt(x.price)+'</em></button>'}).join("")+'</div><button type="button" class="aipc-a" disabled>أضف إلى السلة 🛒</button></div></div>';
+    var o=d.querySelector(".aipc-o"),pills=d.querySelector(".aipc-p"),ab=d.querySelector(".aipc-a");
+    o.onclick=function(){d.classList.toggle("open");msgs.scrollTop=msgs.scrollHeight};
+    pills.onclick=function(e){
+      var b=e.target.closest("button");if(!b)return;
+      pick=b.getAttribute("data-v");
+      Array.prototype.forEach.call(pills.children,function(x){x.className=x===b?"on":""});
+      ab.disabled=false;ab.className="aipc-a";ab.textContent="أضف إلى السلة 🛒";
+    };
+    ab.onclick=function(){
+      if(!pick)return;
+      var k=key(p,pick);cart[k]=(cart[k]||0)+1;save();draw();
+      ab.className="aipc-a done";ab.textContent="✓ انضافت للسلة ("+cart[k]+")";
+    };
+    return d;
+  }
+  function showCards(text){
+    var ps=mentioned(text);if(!ps.length)return;
+    var wrap=document.createElement("div");wrap.className="aipcs";
+    ps.forEach(function(p,i){var c=pcard(p);c.style.animationDelay=(i*120)+"ms";wrap.appendChild(c)});
+    msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
   }
   function catalog(){
     try{return PRODUCTS.slice(0,40).map(function(p){return p.name+(p.en?" ("+p.en+")":"")+" ["+p.types.join("/")+"]"+(p.badge==="soldout"?" نافذ":"")+(p.desc?" — "+p.desc.slice(0,110):"")}).join("\n")}catch(e){return ""}
@@ -874,7 +909,7 @@ chips();draw();init();
       .then(function(x){
         var t=x.ok&&x.j&&x.j.text?String(x.j.text):"";
         if(!t&&window.console)console.warn("ORRIS AI:",x.j&&x.j.error);w.textContent=t||("تعذّر الرد حالياً، جرّب بعد شوية 🌿"+(/[?&]debug=1/.test(location.search)&&x.j&&x.j.error?"\n["+x.j.error+"]":""));
-        if(t){hist.push({r:"u",t:q});hist.push({r:"bot",t:t})}
+        if(t){hist.push({r:"u",t:q});hist.push({r:"bot",t:t});showCards(t)}
       })
       .catch(function(e){if(window.console)console.warn("ORRIS AI:",e);w.textContent="تعذّر الاتصال، جرّب بعد شوية 🌿"+(/[?&]debug=1/.test(location.search)?"\n[فشل الاتصال بالوسيط — تحقق من ALLOWED_ORIGIN ورابط الوسيط]":"")})
       .then(function(){setTimeout(function(){busy=false;sendBtn.disabled=false},1500);msgs.scrollTop=msgs.scrollHeight});
@@ -887,16 +922,21 @@ chips();draw();init();
       "#aiBox .x{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);font-size:16px}"+
       "#aiMsgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px}"+
       ".aim{max-width:85%;padding:10px 14px;border-radius:16px;font-size:15px;line-height:1.8;white-space:pre-wrap;word-break:break-word}.aim.a{align-self:flex-start;background:var(--green);border:1px solid var(--line);border-top-left-radius:4px}.aim.u{align-self:flex-end;background:var(--gold);color:#07090c;border-top-right-radius:4px}"+
-      "#aiSug{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 10px}#aiSug button{border:1px solid var(--gold);border-radius:999px;padding:5px 14px;font-size:13px;color:var(--cream)}#aiSug button:hover{background:var(--gold);color:#07090c}"+
+      ".aipcs{display:flex;flex-direction:column;gap:10px;align-self:stretch}"+
+      ".aipc{border:1px solid var(--line);border-right:3px solid var(--gold);border-radius:14px;padding:12px;background:linear-gradient(160deg,#0f1a10,#0a0f0a);animation:aipIn .45s cubic-bezier(.2,.9,.3,1.2) both}@keyframes aipIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}"+
+      ".aipc-t{display:flex;gap:12px;align-items:center}.aipc-i{flex:none;width:64px;height:64px;border-radius:12px;overflow:hidden;background:linear-gradient(160deg,var(--green),#0a120a);display:grid;place-items:center}.aipc-i img{width:100%;height:100%;object-fit:cover}.aib i{display:block;width:20px;height:34px;border:1.5px solid var(--cream);border-radius:4px}"+
+      ".aipc-n{min-width:0;line-height:1.5}.aipc-n b{display:block;font-family:Amiri,serif;font-size:19px;color:var(--cream)}.aipc-n small{display:block;color:var(--muted);font-size:12px}"+
+      ".aipc-o{margin-top:10px;width:100%;border:1px dashed var(--gold);border-radius:10px;padding:8px;font-size:14px;color:var(--gold);transition:background .2s}.aipc-o:hover{background:rgba(181,138,80,.12)}"+
+      ".aipc-s{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s}.aipc.open .aipc-s{grid-template-rows:1fr}.aipc-s>*{overflow:hidden;min-height:0}"+
+      ".aipc-p{display:flex;gap:8px;flex-wrap:wrap;padding-top:0}.aipc.open .aipc-p{padding-top:10px}.aipc-p button{flex:1;min-width:92px;border:1px solid var(--line);border-radius:10px;padding:7px 8px;font-size:14px;display:flex;flex-direction:column;align-items:center;transition:transform .15s,border-color .15s,background .15s}.aipc-p button em{font-style:normal;font-size:12px;color:var(--muted)}.aipc-p button.on{border-color:var(--gold);background:var(--green);transform:scale(1.04)}.aipc-p button.on em{color:var(--cream)}"+
+      ".aipc-a{margin-top:10px;width:100%;border-radius:10px;padding:9px;background:var(--gold);color:#07090c;font-weight:700;transition:background .25s,transform .15s}.aipc-a[disabled]{opacity:.45}.aipc-a:not([disabled]):active{transform:scale(.97)}.aipc-a.done{background:#3fb86f;color:#07090c}"+
       "#aiBar{display:flex;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}#aiBar input{flex:1;min-width:0;background:var(--bg);color:var(--cream);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font:inherit}#aiBar input:focus{outline:none;border-color:var(--gold)}#aiBar button{background:var(--gold);color:#07090c;border-radius:12px;padding:0 20px;font-weight:700}#aiBar button[disabled]{opacity:.5}";
     document.head.appendChild(st);
     box=document.createElement("div");box.id="aiBox";box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");
-    box.innerHTML='<div class="bx"><div class="hd"><h3>✨ مساعدك الشخصي</h3><button type="button" class="x" id="aiX" aria-label="إغلاق">✕</button></div><div id="aiMsgs"></div><div id="aiSug"></div><div id="aiBar"><input id="aiIn" maxlength="300" placeholder="اكتب رسالتك…" autocomplete="off"><button type="button" id="aiSend">إرسال</button></div></div>';
+    box.innerHTML='<div class="bx"><div class="hd"><h3>✨ مساعدك الشخصي</h3><button type="button" class="x" id="aiX" aria-label="إغلاق">✕</button></div><div id="aiMsgs"></div><div id="aiBar"><input id="aiIn" maxlength="300" placeholder="اكتب رسالتك…" autocomplete="off"><button type="button" id="aiSend">إرسال</button></div></div>';
     document.body.appendChild(box);
     msgs=el("aiMsgs");inp=el("aiIn");sendBtn=el("aiSend");
     add("a",HELLO[G]);
-    el("aiSug").innerHTML=SUG[G].map(function(s){return '<button type="button">'+s+'</button>'}).join("");
-    el("aiSug").onclick=function(e){if(e.target.tagName==="BUTTON")send(e.target.textContent)};
     sendBtn.onclick=function(){send(inp.value)};
     inp.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();send(inp.value)}};
     el("aiX").onclick=function(){box.classList.remove("on")};
