@@ -85,8 +85,8 @@ footer .logo{color:var(--cream);display:block;margin-bottom:10px}
 footer a{color:var(--gold)}
 @media (max-width:560px){.hero{padding:40px 0 60px}h2{font-size:28px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-.pimg{height:170px;margin-bottom:14px;background:linear-gradient(160deg,var(--green),#0a120a);display:grid;place-items:center;overflow:hidden}
-.pimg img{width:100%;height:100%;object-fit:cover;display:block}
+.pimg{height:230px;margin-bottom:14px;background:linear-gradient(160deg,var(--green),#0a120a);display:grid;place-items:center;overflow:hidden}
+.pimg img{width:100%;height:100%;object-fit:contain;display:block}
 .badge{display:inline-block;align-self:flex-start;font-size:12px;padding:0 10px;border:1px solid var(--gold);color:var(--gold);margin-bottom:8px}
 .badge.so{border-color:#7a2a2a;color:#ff9a9a}
 .desc{color:var(--muted);font-size:14px;margin-top:4px}
@@ -642,6 +642,22 @@ $("grid").addEventListener("click",function(e){
   if(gm){cart[gm]--;if(cart[gm]<=0)delete cart[gm]}
   if(a!==null||gp||gm){save();draw()}
 });
+// ══ تكبير الصورة ══
+(function(){
+  var st=document.createElement("style");
+  st.textContent=".pimg img{cursor:zoom-in}#lbx{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.92);padding:20px}#lbx.on{display:flex;animation:lbIn .2s ease}@keyframes lbIn{from{opacity:0}to{opacity:1}}#lbx img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}#lbx button{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:14px;width:44px;height:44px;border-radius:50%;background:rgba(14,20,16,.9);border:1px solid var(--gold);color:var(--cream);font-size:22px;line-height:1;display:grid;place-items:center}";
+  document.head.appendChild(st);
+  var b=document.createElement("div");b.id="lbx";b.setAttribute("role","dialog");b.setAttribute("aria-modal","true");
+  b.innerHTML='<button type="button" aria-label="إغلاق">✕</button><img alt="">';
+  document.body.appendChild(b);
+  function close(){b.classList.remove("on")}
+  b.addEventListener("click",function(e){if(e.target!==b.querySelector("img"))close()});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")close()});
+  document.addEventListener("click",function(e){
+    var im=e.target;if(!im||im.tagName!=="IMG"||!im.closest(".pimg,.aipc-i"))return;
+    b.querySelector("img").src=im.src;b.querySelector("img").alt=im.alt||"";b.classList.add("on");
+  });
+})();
 // ══ نافذة نوع الحجم ══
 var szCur=-1,szTmp="";
 function renderSz(){

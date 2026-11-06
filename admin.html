@@ -1372,11 +1372,11 @@ function compressAndPreview(file){
   reader.onload = function(ev){
     var img = new Image();
     img.onload = function(){
-      var MAX=600, w=img.width, h=img.height;
+      var MAX=1000, w=img.width, h=img.height;
       if(w>h&&w>MAX){ h=Math.round(h*MAX/w); w=MAX; } else if(h>MAX){ w=Math.round(w*MAX/h); h=MAX; }
       var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
-      selectedBase64 = canvas.toDataURL('image/jpeg',0.82);
+      selectedBase64 = canvas.toDataURL('image/jpeg',0.88);
       keepOldImage = false;
       var kb = Math.round(selectedBase64.length*0.75/1024);
       document.getElementById('imgPreviewBig').src = selectedBase64;
