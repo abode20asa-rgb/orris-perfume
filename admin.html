@@ -911,9 +911,15 @@ async function pullFromCloud(){
 }
 
 // ══ Perfumes storage (cloud + local) ══
+var PERF_MEM=null;
+function getPerfumes(){ return PERF_MEM||tryParse(STORAGE_KEY,[]); }
 function persistPerfumes(arr){
+  PERF_MEM=arr;
   try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(arr)); }
-  catch(e){ showToast('⚠️ مساحة تخزين المتصفح ممتلئة'); }
+  catch(e){
+    try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(arr.map(function(p){ return Object.assign({},p,{image:''}); }))); }
+    catch(e2){ try{ localStorage.removeItem(STORAGE_KEY); }catch(e3){} }
+  }
   if(!window.OrrisCloud) return Promise.resolve();
   return OrrisCloud.upsert('perfumes',[{id:1,data:arr,updated_at:new Date().toISOString()}])
     .catch(cloudFail);
@@ -927,11 +933,12 @@ async function loadPerfumesFromSource(){
     }
   }catch(e){}
   if(cloud){
+    PERF_MEM=cloud;
     try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(cloud)); }catch(e){}
     return;
   }
   // ما موجود بالسيرفر: استخدم المحلي، وإذا فارغ استخدم العطور الافتراضية من perfumes-data.js
-  var local=tryParse(STORAGE_KEY,[]);
+  var local=getPerfumes();
   if(!local.length && Array.isArray(window.ORRIS_DEFAULT_PERFUMES)){
     await persistPerfumes(window.ORRIS_DEFAULT_PERFUMES);
   } else if(local.length){
@@ -1466,7 +1473,7 @@ function savePerfume(){
   if(!sizes.some(function(x){ return x.price; })){ showToast('❗ اكتب سعر للحجم'); return; }
   var s30 = sizes.filter(function(x){ return /^\s*30/.test(x.size); })[0];
   var img = selectedBase64;
-  if(!img && keepOldImage && editIndex>=0) img = (tryParse(STORAGE_KEY,[])[editIndex]||{}).image||'';
+  if(!img && keepOldImage && editIndex>=0) img = (getPerfumes()[editIndex]||{}).image||'';
   var p = {
     name:name, nameEn:(document.getElementById('f_nameEn').value||'').trim(),
     type:types[0], types:types,
@@ -1476,7 +1483,7 @@ function savePerfume(){
     currency:document.getElementById('f_currency').value, badge:document.getElementById('f_badge').value, image:img,
     description:(document.getElementById('f_desc').value||'').trim()
   };
-  var perfumes = tryParse(STORAGE_KEY,[]);
+  var perfumes = getPerfumes();
   if(editIndex>=0){ perfumes[editIndex]=Object.assign({},perfumes[editIndex],p); showToast('✅ تم تعديل العطر'); }
   else { perfumes.push(p); showToast('✅ تمت إضافة العطر'); }
   persistPerfumes(perfumes);
@@ -1491,7 +1498,7 @@ function typesOfPerfume(p){
 function getTypes(){ return Array.prototype.map.call(document.querySelectorAll('#f_types input:checked'),function(i){return i.value}); }
 function setTypes(a){ Array.prototype.forEach.call(document.querySelectorAll('#f_types input'),function(i){ i.checked=a.indexOf(i.value)>=0; }); }
 function editPerfume(i){
-  var p = tryParse(STORAGE_KEY,[])[i]; if(!p)return;
+  var p = getPerfumes()[i]; if(!p)return;
   document.getElementById('f_name').value    = p.name||'';
   document.getElementById('f_nameEn').value  = p.nameEn||'';
   setTypes(typesOfPerfume(p));
@@ -1507,7 +1514,7 @@ function editPerfume(i){
   card.scrollIntoView({behavior:'smooth',block:'start'});
   setTimeout(function(){ try{ document.getElementById('f_name').focus({preventScroll:true}); }catch(e){} },400);
 }
-function deletePerfume(i){ if(!confirm('حذف العطر؟'))return; var p=tryParse(STORAGE_KEY,[]); p.splice(i,1); persistPerfumes(p); renderList(); updateStorageBar(); showToast('🗑️ تم حذف العطر'); }
+function deletePerfume(i){ if(!confirm('حذف العطر؟'))return; var p=getPerfumes(); p.splice(i,1); persistPerfumes(p); renderList(); updateStorageBar(); showToast('🗑️ تم حذف العطر'); }
 function resetForm(){
   ['f_name','f_nameEn','f_desc'].forEach(function(id){ document.getElementById(id).value=''; });
   setTypes([]); document.getElementById('f_currency').value='دينار'; document.getElementById('f_badge').value='';
@@ -1517,7 +1524,7 @@ function resetForm(){
   setSizes(sizeTpl());   // نفس آخر أحجام وأسعار انحفظت
 }
 function renderList(){
-  var perfumes = tryParse(STORAGE_KEY,[]);
+  var perfumes = getPerfumes();
   document.getElementById('countBadge').textContent = perfumes.length;
   var list = document.getElementById('perfumeList');
   if(!perfumes.length){ list.innerHTML='<div class="no-items">لا توجد عطور بعد 🌿</div>'; return; }
