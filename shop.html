@@ -822,6 +822,7 @@ function draw(){
   var c=calc();$("count").textContent=c.n;
   if(view==="cart")cartView();
   grid();
+  try{window.AISYNC=(window.AISYNC||[]).filter(function(f){return f()!==false})}catch(e){}
 }
 function toggle(v){
   $("drawer").className="drawer"+(v?" on":"");$("shade").className="shade"+(v?" on":"");
@@ -1002,25 +1003,37 @@ chips();draw();init();
     var from=sizes.length?Math.min.apply(null,sizes.map(function(x){return x.price})):0;
     d.innerHTML='<div class="aipc-t"><div class="aipc-i">'+img+'</div><div class="aipc-n"><b>'+esc(p.name)+'</b>'+(p.en?'<small dir="ltr">'+esc(p.en)+'</small>':'')+'<small>'+esc(p.types.join(" • "))+(from?' · يبدأ من '+fmt(from)+' '+esc(p.cur):'')+'</small></div></div>'+
       '<button type="button" class="aipc-o">اختر الحجم ⌄</button>'+
-      '<div class="aipc-s"><div><div class="aipc-p">'+sizes.map(function(x){return '<button type="button" data-v="'+esc(x.v)+'">'+esc(x.label)+'<em>'+fmt(x.price)+'</em></button>'}).join("")+'</div><button type="button" class="aipc-a" disabled>أضف إلى السلة 🛒</button></div></div>';
-    var o=d.querySelector(".aipc-o"),pills=d.querySelector(".aipc-p"),ab=d.querySelector(".aipc-a");
+      '<div class="aipc-s"><div><div class="aipc-p">'+sizes.map(function(x){return '<button type="button" data-v="'+esc(x.v)+'">'+esc(x.label)+'<em>'+fmt(x.price)+'</em></button>'}).join("")+'</div><div class="aipc-act"><button type="button" class="aipc-a" disabled>أضف إلى السلة 🛒</button></div></div></div>';
+    var o=d.querySelector(".aipc-o"),pills=d.querySelector(".aipc-p"),act=d.querySelector(".aipc-act");
+    // يعكس حالة السلة الحقيقية: إضافة / زيادة / نقص / حذف
+    function sync(){
+      if(d.isConnected)d.__ever=true;
+      Array.prototype.forEach.call(pills.children,function(b){
+        var v=b.getAttribute("data-v");b.setAttribute("data-q",cart[key(p,v)]||0);b.className=(v===pick)?"on":"";
+      });
+      var q=pick?(cart[key(p,pick)]||0):0;
+      if(!pick){act.innerHTML='<button type="button" class="aipc-a" disabled>أضف إلى السلة 🛒</button>';return}
+      if(!q){act.innerHTML='<button type="button" class="aipc-a" data-a="1">أضف إلى السلة 🛒</button>';return}
+      act.innerHTML='<div class="aipc-ok">✓ انضافت للسلة</div><div class="step aipc-st"><button type="button" data-gm="1" aria-label="نقص">−</button><span>'+q+'</span><button type="button" data-gp="1" aria-label="زيادة">+</button></div><button type="button" class="aipc-c">فتح السلة ←</button>';
+    }
     o.onclick=function(){d.classList.toggle("open");msgs.scrollTop=msgs.scrollHeight};
     pills.onclick=function(e){
       var b=e.target.closest("button");if(!b)return;
-      pick=b.getAttribute("data-v");
-      Array.prototype.forEach.call(pills.children,function(x){x.className=x===b?"on":""});
-      ab.disabled=false;ab.className="aipc-a";ab.textContent="أضف إلى السلة 🛒";
+      pick=b.getAttribute("data-v");sync();
     };
-    ab.onclick=function(){
-      if(!pick)return;
-      var k=key(p,pick);cart[k]=(cart[k]||0)+1;save();draw();
-      ab.className="aipc-a done";ab.textContent="✓ انضافت للسلة ("+cart[k]+")";
-      if(!d.querySelector(".aipc-c")){
-        var c=document.createElement("button");c.type="button";c.className="aipc-c";c.textContent="فتح السلة ←";
-        c.onclick=function(){box.classList.remove("on");document.getElementById("openCart").click()};
-        ab.parentNode.appendChild(c);
-      }
+    act.onclick=function(e){
+      var t=e.target.closest("button");if(!t||!pick)return;
+      var k=key(p,pick);
+      if(t.hasAttribute("data-a"))cart[k]=1;
+      else if(t.hasAttribute("data-gp"))cart[k]=(cart[k]||0)+1;
+      else if(t.hasAttribute("data-gm")){cart[k]=(cart[k]||0)-1;if(cart[k]<=0)delete cart[k]}
+      else if(t.className.indexOf("aipc-c")>=0){box.classList.remove("on");document.getElementById("openCart").click();return}
+      else return;
+      save();draw();   // draw() يحدّث كل بطاقات المساعد
     };
+    if(sizes.length===1)pick=sizes[0].v;
+    sync();
+    (window.AISYNC=window.AISYNC||[]).push(function(){if(!d.isConnected&&d.__ever)return false;sync();return true});
     return d;
   }
   function showCards(text){
@@ -1064,6 +1077,7 @@ chips();draw();init();
       ".aipc-s{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s}.aipc.open .aipc-s{grid-template-rows:1fr}.aipc-s>*{overflow:hidden;min-height:0}"+
       ".aipc-p{display:flex;gap:8px;flex-wrap:wrap;padding-top:0}.aipc.open .aipc-p{padding-top:10px}.aipc-p button{flex:1;min-width:92px;border:1px solid var(--line);border-radius:10px;padding:7px 8px;font-size:14px;display:flex;flex-direction:column;align-items:center;transition:transform .15s,border-color .15s,background .15s}.aipc-p button em{font-style:normal;font-size:12px;color:var(--muted)}.aipc-p button.on{border-color:var(--gold);background:var(--green);transform:scale(1.04)}.aipc-p button.on em{color:var(--cream)}"+
       ".aipc-a{margin-top:10px;width:100%;border-radius:10px;padding:9px;background:var(--gold);color:#07090c;font-weight:700;transition:background .25s,transform .15s}.aipc-a[disabled]{opacity:.45}.aipc-a:not([disabled]):active{transform:scale(.97)}.aipc-a.done{background:#3fb86f;color:#07090c}"+
+      ".aipc-ok{margin-top:10px;color:#3fb86f;font-size:13px;text-align:center}.aipc-st{margin-top:8px}.aipc-c{margin-top:8px;width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;font-size:14px;color:var(--cream);transition:border-color .2s}.aipc-c:hover{border-color:var(--gold)}.aipc-p button[data-q]:not([data-q=\"0\"])::after{content:\"في السلة: \" attr(data-q);font-size:11px;color:#3fb86f}"+
       "#aiBar{display:flex;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}#aiBar input{flex:1;min-width:0;background:var(--bg);color:var(--cream);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font:inherit}#aiBar input:focus{outline:none;border-color:var(--gold)}#aiBar button{background:var(--gold);color:#07090c;border-radius:12px;padding:0 20px;font-weight:700}#aiBar button[disabled]{opacity:.5}";
     document.head.appendChild(st);
     box=document.createElement("div");box.id="aiBox";box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");
