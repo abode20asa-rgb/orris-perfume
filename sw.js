@@ -6,7 +6,7 @@ self.addEventListener('push', function (e) {
   try { d = e.data ? e.data.json() : {}; } catch (x) { d = { body: e.data ? e.data.text() : '' }; }
   var opts = {
     body: d.body || '',
-    icon: '/icon-192.png',
+    icon: '/images/logo.jpg',
     badge: '/icon-192.png',
     dir: 'rtl',
     lang: 'ar',
