@@ -959,13 +959,15 @@ async function shrinkAllImages(){
   showToast('✅ تم الضغط: '+(before/1048576).toFixed(1)+'MB ← '+(after/1048576).toFixed(1)+'MB');
 }
 async function loadPerfumesFromSource(){
-  var cloud=null;
+  var cloud=null, cloudFailed=false;
   try{
     if(window.OrrisCloud){
       var rows=await OrrisCloud.list('perfumes','&order=updated_at.desc');
       if(rows.length && Array.isArray(rows[0].data)) cloud=rows[0].data;
     }
-  }catch(e){}
+  }catch(e){ cloudFailed=true; }
+  // إذا فشلت قراءة السيرفر: لا ترفع النسخة المحلية (ممكن تكون بدون صور) حتى ما تمسح صور السيرفر
+  if(cloudFailed){ showToast('⚠️ تعذّر جلب العطور من السيرفر — ما راح أحفظ فوقها'); return; }
   if(cloud){
     PERF_MEM=cloud;
     try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(cloud)); }catch(e){}
