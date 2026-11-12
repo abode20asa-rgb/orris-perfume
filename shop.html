@@ -59,6 +59,14 @@ h2{font-size:34px;margin-bottom:8px}
 .perks h3{font-size:22px;color:var(--gold)}
 .perks p{color:var(--muted);font-size:15px}
 .aicard{align-items:center;gap:14px;width:100%;margin-bottom:22px;padding:16px 18px;border:1px solid var(--gold);border-radius:18px;background:linear-gradient(135deg,var(--green),#0a120a);text-align:right;transition:transform .2s}.aicard:hover{transform:translateY(-2px)}.aicard .aiic{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:rgba(181,138,80,.18)}.aicard b{display:block;font-family:Amiri,serif;font-size:22px;font-weight:700;color:var(--gold)}.aicard small{color:var(--muted);font-size:13px}.aicard .aiar{margin-right:auto;font-size:22px;color:var(--gold)}
+.sbox{position:relative;margin:0 0 18px}
+.sbox input{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--cream);font:inherit;font-size:16px;padding:11px 44px 11px 40px;border-radius:14px;outline:none;transition:border-color .2s}
+.sbox input:focus{border-color:var(--gold)}
+.sbox input::placeholder{color:var(--muted)}
+.sbox input::-webkit-search-cancel-button{display:none}
+.sbox .si{position:absolute;right:14px;top:50%;transform:translateY(-50%);opacity:.7;pointer-events:none}
+.sbox .sx{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;color:var(--muted);font-size:18px;line-height:1;display:none;place-items:center}
+.sbox.has .sx{display:grid}
 .chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px}
 .chip{border:1px solid var(--line);padding:5px 20px;color:var(--muted)}
 .chip.on{border-color:var(--gold);color:var(--cream);background:var(--green)}
@@ -231,6 +239,7 @@ footer a{color:var(--gold)}
     <h2 id="secTitle">العطور</h2>
     <p class="sub">أضف ما يعجبك إلى السلة ثم أرسل الطلب للاستفسار.</p>
     <button type="button" id="aiCard" class="aicard" style="display:none"><span class="aiic">✨</span><span><b>مساعدك الشخصي</b><small>احجيلي شنو تحب وأرشحلك العطر المناسب</small></span><span class="aiar">‹</span></button>
+    <div class="sbox" id="sbox"><span class="si">🔍</span><input type="search" id="sq" placeholder="ابحث عن عطر… (اسم أو وصف)" autocomplete="off" enterkeyhint="search" aria-label="بحث"><button type="button" class="sx" id="sx" aria-label="مسح">✕</button></div>
     <div class="chips" id="chips"></div>
     <div class="grid" id="grid"></div>
     <div style="height:60px"></div>
@@ -609,10 +618,46 @@ function key(p,sz){return p.name+"||"+sz}
 function chips(){
   $("chips").innerHTML=CATS.map(function(c){return '<button class="chip'+(c===cat?' on':'')+'" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join("");
 }
+// ══ البحث السريع (اسم + وصف) ══
+var SQ="";
+function nz(t){return String(t||"").toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/ؤ/g,"و").replace(/ئ/g,"ي")}
+function words(t){
+  var a=nz(t).split(/[^a-z0-9\u0600-\u06FF]+/).filter(Boolean),o=[];
+  a.forEach(function(w){o.push(w);var m=w.match(/^(وال|بال|كال|فال|ال)/);if(m&&w.length>m[0].length+1)o.push(w.slice(m[0].length));else if(w.length>3&&w.charAt(0)==="و")o.push(w.slice(1))});
+  return o;
+}
+function pscore(p,qs){
+  if(!p._nw){p._nw=words(p.name+" "+p.en);p._ns=nz(p.name+" "+p.en);p._dw=words(p.desc+" "+p.types.join(" "));p._ds=nz(p.desc)}
+  var tot=0;
+  for(var i=0;i<qs.length;i++){
+    var q=qs[i],s=0;
+    if(p._nw.some(function(w){return w.indexOf(q)===0}))s=5;
+    else if(q.length>=2&&p._ns.indexOf(q)>=0)s=4;
+    else if(p._dw.some(function(w){return w.indexOf(q)===0}))s=3;
+    else if(q.length>=3&&p._ds.indexOf(q)>=0)s=2;
+    if(!s)return 0;
+    tot+=s;
+  }
+  return tot;
+}
+function searchList(list,q){
+  var qs=words(q).filter(function(w){return w.length>0});
+  if(!qs.length)return list;
+  return list.map(function(p,i){return {p:p,s:pscore(p,qs),i:i}}).filter(function(x){return x.s>0})
+    .sort(function(a,b){return b.s-a.s||a.i-b.i}).map(function(x){return x.p});
+}
+(function(){
+  var inp=$("sq"),box=$("sbox"),t=null;
+  function run(){SQ=inp.value.trim();box.className="sbox"+(inp.value?" has":"");grid()}
+  inp.addEventListener("input",function(){clearTimeout(t);t=setTimeout(run,60)});
+  $("sx").addEventListener("click",function(){inp.value="";run();inp.focus()});
+  inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();inp.blur()}});
+})();
 function grid(){
   if(closed){$("grid").innerHTML='<p class="state" style="grid-column:1/-1">المتجر مغلق حالياً، نعود قريباً 🌿</p>';return}
   var list=PRODUCTS.filter(function(p){return cat==="الكل"||p.cat===cat});
-  if(!list.length){$("grid").innerHTML='<p class="state" style="grid-column:1/-1">لا توجد عطور حالياً.</p>';return}
+  if(SQ){list=searchList(list,SQ);if(!list.length){$("grid").innerHTML='<p class="state" style="grid-column:1/-1">ما لقينا عطر يطابق «'+esc(SQ)+'» 🌿</p>';return}}
+  else if(!list.length){$("grid").innerHTML='<p class="state" style="grid-column:1/-1">لا توجد عطور حالياً.</p>';return}
   $("grid").innerHTML=list.map(function(p){
     var sz=size(p),k=key(p,sz),pr=priceOf(p,sz),old=oldOf(p,sz),so=p.badge==="soldout";
     var img=p.img?'<div class="pimg"><img src="'+esc(p.img)+'" alt="'+esc(p.name)+'" loading="lazy"></div>':'<div class="bottle"><i></i></div>';

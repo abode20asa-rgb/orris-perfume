@@ -663,6 +663,7 @@ button{border-radius:4px}
     <!-- قائمة العطور -->
     <div class="section-card">
       <h2>🌿 العطور الحالية (<span id="countBadge">0</span>)</h2>
+      <button type="button" class="btn-save" style="margin:0 0 12px;width:auto;padding:8px 16px" onclick="shrinkAllImages()">🗜️ ضغط الصور</button>
       <div class="perfume-list" id="perfumeList"></div>
     </div>
 
@@ -922,7 +923,40 @@ function persistPerfumes(arr){
   }
   if(!window.OrrisCloud) return Promise.resolve();
   return OrrisCloud.upsert('perfumes',[{id:1,data:arr,updated_at:new Date().toISOString()}])
-    .catch(cloudFail);
+    .catch(function(e){
+      if(e && e.message === 'SESSION_EXPIRED') return cloudFail(e);
+      var mb=(JSON.stringify(arr).length/1048576).toFixed(1);
+      showToast('⚠️ فشل حفظ العطور على السيرفر (الحجم '+mb+'MB) — اضغط «ضغط الصور»');
+      if(window.console) console.warn('perfumes upsert failed', e);
+    });
+}
+function shrinkImg(src,cb){
+  var im=new Image();
+  im.onload=function(){
+    var M=700,w=im.width,h=im.height;
+    if(w<=M&&h<=M&&src.length<70000){cb(src);return}
+    if(w>h&&w>M){h=Math.round(h*M/w);w=M}else if(h>M){w=Math.round(w*M/h);h=M}
+    var c=document.createElement('canvas');c.width=w;c.height=h;
+    var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);
+    var o=c.toDataURL('image/jpeg',0.78);cb(o.length<src.length?o:src);
+  };
+  im.onerror=function(){cb(src)};
+  im.src=src;
+}
+async function shrinkAllImages(){
+  var arr=getPerfumes().slice(); if(!arr.length){ showToast('لا توجد عطور'); return; }
+  var before=JSON.stringify(arr).length;
+  showToast('⏳ جاري ضغط الصور…');
+  for(var i=0;i<arr.length;i++){
+    var im=arr[i]&&arr[i].image;
+    if(im && /^data:image\//.test(im)){
+      await new Promise(function(res){ shrinkImg(im,function(o){ arr[i]=Object.assign({},arr[i],{image:o}); res(); }); });
+    }
+  }
+  var after=JSON.stringify(arr).length;
+  await persistPerfumes(arr);
+  renderList(); updateStorageBar();
+  showToast('✅ تم الضغط: '+(before/1048576).toFixed(1)+'MB ← '+(after/1048576).toFixed(1)+'MB');
 }
 async function loadPerfumesFromSource(){
   var cloud=null;
@@ -1379,11 +1413,11 @@ function compressAndPreview(file){
   reader.onload = function(ev){
     var img = new Image();
     img.onload = function(){
-      var MAX=1000, w=img.width, h=img.height;
+      var MAX=700, w=img.width, h=img.height;
       if(w>h&&w>MAX){ h=Math.round(h*MAX/w); w=MAX; } else if(h>MAX){ w=Math.round(w*MAX/h); h=MAX; }
       var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      selectedBase64 = canvas.toDataURL('image/jpeg',0.88);
+      var cx=canvas.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,w,h); cx.drawImage(img,0,0,w,h);
+      selectedBase64 = canvas.toDataURL('image/jpeg',0.78);
       keepOldImage = false;
       var kb = Math.round(selectedBase64.length*0.75/1024);
       document.getElementById('imgPreviewBig').src = selectedBase64;
