@@ -663,7 +663,7 @@ button{border-radius:4px}
     <!-- قائمة العطور -->
     <div class="section-card">
       <h2>🌿 العطور الحالية (<span id="countBadge">0</span>)</h2>
-      <button type="button" class="btn-save" style="margin:0 0 12px;width:auto;padding:8px 16px" onclick="shrinkAllImages()">🗜️ ضغط الصور</button>
+      <button type="button" class="btn-save" style="margin:0 0 12px;width:auto;padding:8px 16px" onclick="shrinkAllImages()">📦 نقل الصور للتخزين</button>
       <div class="perfume-list" id="perfumeList"></div>
     </div>
 
@@ -926,9 +926,23 @@ function persistPerfumes(arr){
     .catch(function(e){
       if(e && e.message === 'SESSION_EXPIRED') return cloudFail(e);
       var mb=(JSON.stringify(arr).length/1048576).toFixed(1);
-      showToast('⚠️ فشل حفظ العطور على السيرفر (الحجم '+mb+'MB) — اضغط «ضغط الصور»');
+      showToast('⚠️ فشل حفظ العطور على السيرفر (الحجم '+mb+'MB) — اضغط «نقل الصور للتخزين»');
       if(window.console) console.warn('perfumes upsert failed', e);
     });
+}
+async function uploadPerfumeImg(dataUrl){
+  var m=/^data:(image\/[a-z+]+);base64,(.*)$/i.exec(dataUrl);
+  if(!m) throw new Error('صيغة الصورة غير صالحة');
+  var bin=atob(m[2]), u=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+  var ext=m[1].indexOf('png')>=0?'png':'jpg';
+  var name='p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)+'.'+ext;
+  var t=await OrrisCloud.token(); if(!t) throw new Error('SESSION_EXPIRED');
+  var base=String(window.ORRIS_SUPABASE_URL).replace(/\/+$/,'');
+  var r=await fetch(base+'/storage/v1/object/perfume-images/'+name,{method:'POST',
+    headers:{apikey:window.ORRIS_SUPABASE_KEY,Authorization:'Bearer '+t,'Content-Type':m[1],'cache-control':'max-age=31536000'},body:u});
+  if(!r.ok){ var tx=''; try{ tx=await r.text(); }catch(e){} throw new Error('HTTP '+r.status+' '+tx.slice(0,120)); }
+  return base+'/storage/v1/object/public/perfume-images/'+name;
 }
 function shrinkImg(src,cb){
   var im=new Image();
@@ -946,17 +960,20 @@ function shrinkImg(src,cb){
 async function shrinkAllImages(){
   var arr=getPerfumes().slice(); if(!arr.length){ showToast('لا توجد عطور'); return; }
   var before=JSON.stringify(arr).length;
-  showToast('⏳ جاري ضغط الصور…');
+  var moved=0, fail=false;
+  showToast('⏳ جاري نقل الصور للتخزين…');
   for(var i=0;i<arr.length;i++){
     var im=arr[i]&&arr[i].image;
     if(im && /^data:image\//.test(im)){
-      await new Promise(function(res){ shrinkImg(im,function(o){ arr[i]=Object.assign({},arr[i],{image:o}); res(); }); });
+      var small=await new Promise(function(res){ shrinkImg(im,res); });
+      try{ arr[i]=Object.assign({},arr[i],{image:await uploadPerfumeImg(small)}); moved++; }
+      catch(e){ showToast('❌ توقف النقل عند «'+(arr[i].name||i)+'»: '+String(e&&e.message||e).slice(0,70)); fail=true; break; }
     }
   }
   var after=JSON.stringify(arr).length;
   await persistPerfumes(arr);
   renderList(); updateStorageBar();
-  showToast('✅ تم الضغط: '+(before/1048576).toFixed(1)+'MB ← '+(after/1048576).toFixed(1)+'MB');
+  if(!fail) showToast('✅ اننقلت '+moved+' صورة — الحجم '+(before/1048576).toFixed(1)+'MB ← '+(after/1048576).toFixed(1)+'MB');
 }
 async function loadPerfumesFromSource(){
   var cloud=null, cloudFailed=false;
@@ -1499,7 +1516,7 @@ async function loadSizeTpl(){
     }
   }catch(e){}
 }
-function savePerfume(){
+async function savePerfume(){
   var name = (document.getElementById('f_name').value||'').trim();
   if(!name){ showToast('❗ اسم العطر مطلوب'); return; }
   var types = getTypes();
@@ -1509,6 +1526,11 @@ function savePerfume(){
   if(!sizes.some(function(x){ return x.price; })){ showToast('❗ اكتب سعر للحجم'); return; }
   var s30 = sizes.filter(function(x){ return /^\s*30/.test(x.size); })[0];
   var img = selectedBase64;
+  if(img && img.indexOf('data:')===0){
+    showToast('⏳ جاري رفع الصورة…');
+    try{ img = await uploadPerfumeImg(img); }
+    catch(e){ showToast('❌ فشل رفع الصورة: '+String(e&&e.message||e).slice(0,70)); return; }
+  }
   if(!img && keepOldImage && editIndex>=0) img = (getPerfumes()[editIndex]||{}).image||'';
   var p = {
     name:name, nameEn:(document.getElementById('f_nameEn').value||'').trim(),
