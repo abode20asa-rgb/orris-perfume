@@ -60,14 +60,40 @@ h2{font-size:34px;margin-bottom:8px}
 .perks p{color:var(--muted);font-size:15px}
 .aicard{align-items:center;gap:14px;width:100%;margin-bottom:22px;padding:16px 18px;border:1px solid var(--gold);border-radius:18px;background:linear-gradient(135deg,var(--green),#0a120a);text-align:right;transition:transform .2s}.aicard:hover{transform:translateY(-2px)}.aicard .aiic{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:rgba(181,138,80,.18)}.aicard b{display:block;font-family:Amiri,serif;font-size:22px;font-weight:700;color:var(--gold)}.aicard small{color:var(--muted);font-size:13px}.aicard .aiar{margin-right:auto;font-size:22px;color:var(--gold)}
 .sbox{position:relative;margin:0 0 18px}
-.sbox input{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--cream);font:inherit;font-size:16px;padding:11px 44px 11px 40px;border-radius:14px;outline:none;transition:border-color .2s}
+.sbox input{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--cream);font:inherit;font-size:16px;padding:11px 44px 11px 92px;border-radius:14px;outline:none;transition:border-color .2s}
 .sbox input:focus{border-color:var(--gold)}
 .sbox input::placeholder{color:var(--muted)}
 .sbox input::-webkit-search-cancel-button{display:none}
 .sbox .si{position:absolute;right:14px;top:50%;transform:translateY(-50%);opacity:.7;pointer-events:none}
-.sbox .sx{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;color:var(--muted);font-size:18px;line-height:1;display:none;place-items:center}
+.sbox .vw{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:38px;height:34px;border-radius:10px;border:1px solid var(--line);color:var(--gold);display:grid;place-items:center;background:var(--bg);transition:border-color .2s}
+.sbox .vw:hover,.sbox .vw:focus-visible{border-color:var(--gold);outline:none}
+.sbox .vw svg{width:20px;height:20px}
+.sbox .sx{position:absolute;left:50px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;color:var(--muted);font-size:18px;line-height:1;display:none;place-items:center}
 .sbox.has .sx{display:grid}
 .chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px}
+#grid[data-cols="1"]{grid-template-columns:minmax(0,520px);justify-content:center;gap:18px}
+#grid[data-cols="2"]{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#grid[data-cols="4"]{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:700px){
+  #grid[data-cols="2"] .card{padding:12px 10px}
+  #grid[data-cols="2"] .card h3{font-size:17px}
+  #grid[data-cols="2"] .card small{font-size:12px}
+  #grid[data-cols="2"] .card .desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px}
+  #grid[data-cols="2"] .card .add,#grid[data-cols="2"] .card .szbtn{font-size:13px;padding:6px 4px}
+  #grid[data-cols="2"] .step button{width:30px;height:30px;font-size:17px}
+  #grid[data-cols="4"] .card{padding:6px 5px}
+  #grid[data-cols="4"] .card h3{font-size:12px;line-height:1.4}
+  #grid[data-cols="4"] .card small,#grid[data-cols="4"] .card .desc{display:none}
+  #grid[data-cols="4"] .card .price{font-size:11px}
+  #grid[data-cols="4"] .card .badge{font-size:9px;padding:1px 4px}
+  #grid[data-cols="4"] .card .add,#grid[data-cols="4"] .card .szbtn{font-size:10px;padding:4px 1px;margin-top:6px}
+  #grid[data-cols="4"] .card .szerr{font-size:9px}
+  #grid[data-cols="4"] .step{margin-top:6px;padding:2px}
+  #grid[data-cols="4"] .step button{width:20px;height:20px;font-size:13px}
+  #grid[data-cols="4"] .step span{font-size:13px;min-width:16px}
+  #grid[data-cols="4"] .pimg,#grid[data-cols="4"] .bottle{margin-bottom:6px}
+  #grid[data-cols="4"] .bottle{height:70px}
+}
 .chip{border:1px solid var(--line);padding:5px 20px;color:var(--muted)}
 .chip.on{border-color:var(--gold);color:var(--cream);background:var(--green)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
@@ -239,7 +265,7 @@ footer a{color:var(--gold)}
     <h2 id="secTitle">العطور</h2>
     <p class="sub">أضف ما يعجبك إلى السلة ثم أرسل الطلب للاستفسار.</p>
     <button type="button" id="aiCard" class="aicard" style="display:none"><span class="aiic">✨</span><span><b>مساعدك الشخصي</b><small>احجيلي شنو تحب وأرشحلك العطر المناسب</small></span><span class="aiar">‹</span></button>
-    <div class="sbox" id="sbox"><span class="si">🔍</span><input type="search" id="sq" placeholder="ابحث عن عطر… (اسم أو وصف)" autocomplete="off" enterkeyhint="search" aria-label="بحث"><button type="button" class="sx" id="sx" aria-label="مسح">✕</button></div>
+    <div class="sbox" id="sbox"><span class="si">🔍</span><input type="search" id="sq" placeholder="ابحث عن عطر… (اسم أو وصف)" autocomplete="off" enterkeyhint="search" aria-label="بحث"><button type="button" class="vw" id="vw" aria-label="تغيير طريقة العرض"></button><button type="button" class="sx" id="sx" aria-label="مسح">✕</button></div>
     <div class="chips" id="chips"></div>
     <div class="grid" id="grid"></div>
     <div style="height:60px"></div>
@@ -646,6 +672,22 @@ function searchList(list,q){
   return list.map(function(p,i){return {p:p,s:pscore(p,qs),i:i}}).filter(function(x){return x.s>0})
     .sort(function(a,b){return b.s-a.s||a.i-b.i}).map(function(x){return x.p});
 }
+// ══ طريقة عرض العطور (1 / 2 / 4 بالصف) ══
+var VIEWS=[1,2,4],VW=2;
+var VICONS={
+  1:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="2"/></svg>',
+  2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="4" width="7.5" height="16" rx="1.6"/><rect x="13" y="4" width="7.5" height="16" rx="1.6"/></svg>',
+  4:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2.5" y="4" width="3.8" height="16" rx="1"/><rect x="7.6" y="4" width="3.8" height="16" rx="1"/><rect x="12.7" y="4" width="3.8" height="16" rx="1"/><rect x="17.8" y="4" width="3.8" height="16" rx="1"/></svg>'
+};
+var VLBL={1:"عطر بكل صف",2:"عطرين بكل صف",4:"4 عطور بكل صف"};
+function setView(v){
+  VW=v;$("grid").setAttribute("data-cols",v);
+  $("vw").innerHTML=VICONS[v];$("vw").title="طريقة العرض: "+VLBL[v];$("vw").setAttribute("aria-label","طريقة العرض: "+VLBL[v]+" — اضغط للتغيير");
+  try{localStorage.setItem("orris_view",String(v))}catch(e){}
+}
+try{var sv=parseInt(localStorage.getItem("orris_view"),10);VW=VIEWS.indexOf(sv)>=0?sv:(window.innerWidth>=900?4:2)}catch(e){}
+$("vw").addEventListener("click",function(){setView(VIEWS[(VIEWS.indexOf(VW)+1)%VIEWS.length])});
+setView(VW);
 (function(){
   var inp=$("sq"),box=$("sbox"),t=null;
   function run(){SQ=inp.value.trim();box.className="sbox"+(inp.value?" has":"");grid()}
