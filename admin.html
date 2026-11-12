@@ -315,6 +315,22 @@ button{border-radius:4px}
 .sz-table .sz-x:hover{background:rgba(255,80,80,.15)}
 .btn-add-size{width:100%;padding:9px;border-radius:4px;border:1px dashed #b58a50;background:transparent;color:#efe6d2;font-family:'Tajawal',sans-serif;font-weight:700;cursor:pointer}
 .btn-add-size:hover{background:rgba(181,138,80,.15)}
+
+/* ── إشعار الطلب الجديد ── */
+#newOrderBanner{position:fixed;top:0;left:0;right:0;z-index:10000;display:flex;flex-direction:column;gap:8px;padding:10px;pointer-events:none;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.no-item{pointer-events:auto;display:flex;align-items:center;gap:12px;max-width:560px;width:100%;margin:0 auto;background:#b58a50;color:#07090c;border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.55);animation:noIn .35s ease,noPulse 1.6s ease-in-out infinite;font-family:'Tajawal',sans-serif}
+.no-item .no-ic{font-size:1.7rem}
+.no-item .no-tx{flex:1;line-height:1.5}
+.no-item .no-tx b{display:block;font-size:1rem;font-weight:900}
+.no-item .no-tx span{font-size:.85rem;font-weight:700;opacity:.85}
+.no-open{border:none;background:#07090c;color:#efe6d2;padding:10px 16px;border-radius:8px;font-family:'Tajawal',sans-serif;font-weight:900;font-size:.9rem;cursor:pointer}
+.no-x{border:none;background:transparent;color:#07090c;font-size:1.2rem;cursor:pointer;padding:4px 8px;font-weight:900}
+@keyframes noIn{from{transform:translateY(-30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes noPulse{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.55)}50%{box-shadow:0 10px 36px rgba(181,138,80,.85)}}
+.order-card.flash-new{animation:ordFlash 1.2s ease-in-out 3;border-color:#b58a50!important}
+@keyframes ordFlash{0%,100%{background:rgba(239,230,210,0.08)}50%{background:rgba(181,138,80,0.45)}}
+.bell-btn{background:rgba(239,230,210,0.1);border:1.5px solid rgba(239,230,210,0.25);color:#efe6d2;width:38px;height:38px;border-radius:50%;font-size:1.05rem;cursor:pointer;margin-inline-end:8px;flex-shrink:0}
+.bell-btn.on{background:#b58a50;color:#07090c;border-color:#b58a50}
 </style>
 <style id="spAdminCss">
 /* ══ الدعم ══ */
@@ -377,6 +393,7 @@ button{border-radius:4px}
     <img src="images/logo.jpg" alt="Logo" class="logo" onerror="this.style.display='none'">
     <div class="header-title">⚙️ لوحة التحكم — أوريس للعطور</div>
     <div class="hd-end">
+      <button type="button" class="bell-btn" id="bellBtn" onclick="noEnable()" title="تفعيل إشعارات الطلبات الجديدة">🔕</button>
       <div class="dots-wrap">
         <button type="button" class="dots-btn" id="dotsBtn" aria-label="القائمة" aria-haspopup="true" aria-expanded="false" onclick="dotsToggle(event)"><i></i><i></i><i></i></button>
         <div class="dots-menu" id="dotsMenu" role="menu">
@@ -678,6 +695,7 @@ button{border-radius:4px}
   </main>
 </div>
 <div id="toast"></div>
+<div id="newOrderBanner"></div>
 
 <!-- إعدادات الذكاء الاصطناعي -->
 <div id="aiModal" role="dialog" aria-label="الذكاء الاصطناعي" onclick="if(event.target===this)aiClose()">
@@ -861,7 +879,7 @@ function refreshFromCloud(){
 }
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshFromCloud(); });
 window.addEventListener('focus', refreshFromCloud);
-setInterval(refreshFromCloud, 30000);
+setInterval(refreshFromCloud, 10000);
 function initAll(){ try{ setSizes(sizeTpl()); loadSizeTpl(); }catch(e){} try{ spStart(); }catch(e){} try{ rvLoad(); setInterval(rvLoad,30000); }catch(e){} try{ loadPushAdmin(); }catch(e){}
   pullFromCloud().then(function(){
     renderStats(); renderOrders(); renderCustomers(); renderCoupons();
@@ -917,7 +935,106 @@ async function pullFromCloud(){
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
   localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(customers));
   localStorage.setItem(COUPONS_KEY, JSON.stringify(coupons));
+  try{ noWatch(orders); }catch(e){}
 }
+
+// ══ إشعار الطلب الجديد ══
+var NO_SEEN_KEY='orris_seen_order_ids', NO_BASE_TITLE=document.title, noCtx=null, noTitleTimer=null, noUnread=0;
+function noAudio(){
+  try{ if(!noCtx){ var C=window.AudioContext||window.webkitAudioContext; if(!C) return null; noCtx=new C(); } if(noCtx.state==='suspended') noCtx.resume(); return noCtx; }catch(e){ return null; }
+}
+function noSound(){
+  var c=noAudio(); if(!c) return;
+  var seq=[[880,0],[1175,.18],[1568,.36],[880,.9],[1175,1.08],[1568,1.26]];
+  seq.forEach(function(n){
+    try{
+      var o=c.createOscillator(), g=c.createGain(), t=c.currentTime+n[1];
+      o.type='sine'; o.frequency.value=n[0];
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.5,t+.02); g.gain.exponentialRampToValueAtTime(0.0001,t+.3);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+.32);
+    }catch(e){}
+  });
+}
+function noBell(){
+  var b=document.getElementById('bellBtn'); if(!b) return;
+  var ok=('Notification' in window) && Notification.permission==='granted';
+  b.textContent=ok?'🔔':'🔕'; b.classList.toggle('on',ok);
+  b.title=ok?'إشعارات الطلبات مفعّلة':'اضغط لتفعيل إشعارات الطلبات الجديدة';
+}
+async function noEnable(){
+  noAudio(); noSound();
+  if(!('Notification' in window)){ showToast('⚠️ هذا المتصفح ما يدعم إشعارات النظام، بس الصوت والبانر يشتغلون'); return; }
+  try{ if(Notification.permission==='default') await Notification.requestPermission(); }catch(e){}
+  noBell();
+  showToast(Notification.permission==='granted' ? '✅ تم تفعيل إشعارات الطلبات' : '❌ الإشعارات محظورة — فعّلها من إعدادات الموقع بالمتصفح');
+}
+// أول لمسة بالصفحة: فعّل الصوت واطلب إذن الإشعارات
+document.addEventListener('pointerdown', function noFirst(){
+  document.removeEventListener('pointerdown', noFirst);
+  noAudio();
+  try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission().then(noBell); }catch(e){}
+}, {once:true});
+
+async function noSystemNotify(o){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  var c=o.customer||{}, title='🛒 طلب جديد'+(o.code?' #'+o.code:'');
+  var body=(c.name||'زبون')+' — '+(Number(o.total)||0).toLocaleString('en-US')+' '+(o.currency||'دينار');
+  var opt={body:body,tag:'order-'+o.id,renotify:true,requireInteraction:true,vibrate:[300,120,300,120,300],data:{url:location.href.split('#')[0]+'#order-'+o.id}};
+  try{
+    var reg=navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    if(reg && reg.showNotification){ await reg.showNotification(title,opt); return; }
+  }catch(e){}
+  try{ var n=new Notification(title,opt); n.onclick=function(){ window.focus(); noOpen(o.id); n.close(); }; }catch(e){}
+}
+function noTitle(){
+  clearInterval(noTitleTimer);
+  if(!noUnread){ document.title=NO_BASE_TITLE; return; }
+  var on=false;
+  noTitleTimer=setInterval(function(){ on=!on; document.title=on?('🛒 ('+noUnread+') طلب جديد'):NO_BASE_TITLE; },1000);
+}
+function noClear(){ noUnread=0; noTitle(); }
+function noShow(o){
+  var box=document.getElementById('newOrderBanner'); if(!box) return;
+  var c=o.customer||{};
+  var el=document.createElement('div'); el.className='no-item'; el.setAttribute('data-oid',String(o.id));
+  el.innerHTML='<div class="no-ic">🛒</div><div class="no-tx"><b>طلب جديد'+(o.code?' #'+esc(o.code):'')+'</b><span>'+esc(c.name||'زبون')+' — '+esc((Number(o.total)||0).toLocaleString('en-US'))+' '+esc(o.currency||'دينار')+'</span></div><button type="button" class="no-open">فتح الطلب</button><button type="button" class="no-x" aria-label="إغلاق">✕</button>';
+  el.querySelector('.no-open').onclick=function(){ noOpen(o.id); };
+  el.querySelector('.no-x').onclick=function(){ el.remove(); };
+  box.appendChild(el);
+  while(box.children.length>4) box.removeChild(box.firstChild);
+}
+function noOpen(id){
+  id=String(id);
+  currentFilter='all';
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  var fb=document.querySelector('.filter-btn'); if(fb) fb.classList.add('active');
+  var se=document.getElementById('orderSearch'); if(se) se.value='';
+  renderOrders();
+  var el=document.getElementById('ord-'+id);
+  if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('flash-new'); setTimeout(function(){ el.classList.remove('flash-new'); },4000); }
+  var b=document.querySelector('#newOrderBanner [data-oid="'+id.replace(/"/g,'')+'"]'); if(b) b.remove();
+  noClear();
+}
+function noWatch(orders){
+  var raw=null; try{ raw=localStorage.getItem(NO_SEEN_KEY); }catch(e){}
+  var all=(orders||[]).filter(function(o){ return o && o.id!=null; });
+  var ids=all.map(function(o){ return String(o.id); });
+  if(raw===null){ try{ localStorage.setItem(NO_SEEN_KEY,JSON.stringify(ids)); }catch(e){} noBell(); return; } // أول تشغيل: بدون إشعارات قديمة
+  var seen={}; try{ JSON.parse(raw).forEach(function(i){ seen[i]=1; }); }catch(e){}
+  var fresh=all.filter(function(o){ return !seen[String(o.id)] && !o.manual && ordSt(o)==='pending'; });
+  try{ localStorage.setItem(NO_SEEN_KEY,JSON.stringify(ids)); }catch(e){}
+  noBell();
+  if(!fresh.length) return;
+  fresh.sort(function(a,b){ return new Date(a.date)-new Date(b.date); });
+  fresh.forEach(function(o){ noShow(o); noSystemNotify(o); });
+  noUnread+=fresh.length; noTitle(); noSound();
+  try{ if(navigator.vibrate) navigator.vibrate([300,120,300,120,300]); }catch(e){}
+}
+// فتح الطلب من رابط الإشعار (#order-ID)
+function noHash(){ var m=/^#order-(.+)$/.exec(location.hash||''); if(m) setTimeout(function(){ noOpen(decodeURIComponent(m[1])); },600); }
+window.addEventListener('hashchange',noHash);
+window.addEventListener('load',noHash);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden && !document.querySelector('#newOrderBanner .no-item')) noClear(); });
 
 // ══ Perfumes storage (cloud + local) ══
 var PERF_MEM=null;
@@ -1274,7 +1391,7 @@ function renderOrders(){
     var d    = new Date(order.date).toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'});
     var st   = ordSt(order);
     var items = (order.items||[]).map(function(i,n){ return '<div class="order-item-row">'+(n+1)+'. '+esc(i.name)+(i.size?' ('+esc(i.size)+')':'')+' × '+esc(i.qty)+' — '+esc((i.price*i.qty).toLocaleString('en-US'))+' '+esc(i.currency)+'</div>'; }).join('');
-    return '<div class="order-card">' +
+    return '<div class="order-card" id="ord-'+esc(order.id)+'">' +
       '<div class="order-top">' +
         '<div><div class="order-id"># '+esc(order.id||idx+1)+(order.code?' <b class="order-code">🔖 '+esc(order.code)+'</b>':'')+(order.manual?' <small style="opacity:.8;font-weight:700">📝 مضاف يدوياً</small>':'')+'</div><div class="order-cust">👤 '+esc(order.customer&&order.customer.name||'—')+'</div><div class="order-phone">📱 '+esc(order.customer&&order.customer.phone||'—')+'</div><div class="order-phone">📍 '+esc([order.customer&&order.customer.province,order.customer&&order.customer.area,order.customer&&order.customer.address].filter(function(x){return x&&x!=='—';}).join(' - ')||'—')+'</div></div>' +
         '<div style="text-align:left"><div class="order-date">🕐 '+d+'</div>' +
