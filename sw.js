@@ -19,9 +19,14 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var url = new URL((e.notification.data && e.notification.data.url) || '/shop.html', self.location.origin).href;
+  var base = url.split('#')[0];
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
     for (var i = 0; i < list.length; i++) {
-      if (list[i].url === url && 'focus' in list[i]) return list[i].focus();
+      var c = list[i];
+      if (c.url.split('#')[0] === base && 'focus' in c) {
+        // نفس الصفحة مفتوحة: ركّز عليها وغيّر الـ #hash فقط (بدون إعادة تحميل)
+        return c.focus().then(function (w) { return (w && c.url !== url && 'navigate' in w) ? w.navigate(url).catch(function () {}) : w; });
+      }
     }
     return self.clients.openWindow(url);
   }));

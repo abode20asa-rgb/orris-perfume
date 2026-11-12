@@ -1,6 +1,6 @@
-/* أوراس — الإشعارات (Web Push)
+/* أوريس — الإشعارات (Web Push)
    يحتاج supabase-config.js قبله + ملف sw.js بجذر الموقع.
-   الواجهة: OrrisPush.ensure(chatId) → Promise<boolean> | OrrisPush.allowed() | OrrisPush.notifyAdmin(chatId) | OrrisPush.adminSub() */
+   الواجهة: OrrisPush.notifyOrder(orderId) | OrrisPush.ensure(chatId) → Promise<boolean> | OrrisPush.allowed() | OrrisPush.notifyAdmin(chatId) | OrrisPush.adminSub() */
 (function () {
   var PUB = 'BPjEAfwI7g5hG0YY7Sv2DynFTzbE17xxXY6RyxBg1llNAZh5OclMRxsjdGVX7hYlvwIr0Ci4ssi1NMskgxXTkP8';
   var DEF_PROXY = 'https://orris-ai.abode20asa.workers.dev';
@@ -55,6 +55,41 @@
       return fetch(p + '/push/incoming', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat: chat }) });
     }).catch(function () {});
   }
+  // إشعار للأدمن بطلب جديد (الوسيط يتحقق من وجود الطلب فعلاً بالقاعدة)
+  function notifyOrder(id) {
+    return proxy().then(function (p) {
+      return fetch(p + '/push/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(id == null ? {} : { id: String(id) }) });
+    }).catch(function () {});
+  }
+  // يربط تلقائياً: أي طلب ينحفظ من صفحة الزبون يرسل إشعار للأدمن بدون تعديل صفحة الزبون
+  function hookOrders() {
+    try {
+      var C = window.OrrisCloud;
+      if (!C || C.__orderHook || window.ORRIS_NO_PN_BANNER) return;
+      C.__orderHook = 1;
+      var isAdmin = function () { try { return !!(C.hasSession && C.hasSession()); } catch (e) { return false; } };
+      ['insert', 'upsert'].forEach(function (m) {
+        var f = C[m]; if (typeof f !== 'function') return;
+        C[m] = function (t, rows) {
+          var p = f.apply(this, arguments);
+          if (t === 'orders' && !isAdmin()) {
+            Promise.resolve(p).then(function () {
+              (Array.isArray(rows) ? rows : [rows]).forEach(function (r) { if (r && r.id != null) notifyOrder(r.id); });
+            }).catch(function () {});
+          }
+          return p;
+        };
+      });
+      var rp = C.rpc;
+      if (typeof rp === 'function') C.rpc = function (name) {
+        var p = rp.apply(this, arguments);
+        if (/order/i.test(String(name || '')) && !isAdmin()) Promise.resolve(p).then(function () { notifyOrder(); }).catch(function () {});
+        return p;
+      };
+    } catch (e) {}
+  }
+  hookOrders();
+
   function adminSub() {
     if (!supported) return Promise.reject(new Error('unsupported'));
     return Promise.resolve(Notification.requestPermission()).then(function (r) {
@@ -93,5 +128,5 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
-  window.OrrisPush = { supported: supported, allowed: allowed, ensure: ensure, notifyAdmin: notifyAdmin, adminSub: adminSub, proxy: proxy };
+  window.OrrisPush = { supported: supported, allowed: allowed, ensure: ensure, notifyAdmin: notifyAdmin, notifyOrder: notifyOrder, adminSub: adminSub, proxy: proxy };
 })();
