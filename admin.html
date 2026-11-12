@@ -663,7 +663,15 @@ button{border-radius:4px}
     <!-- قائمة العطور -->
     <div class="section-card">
       <h2>🌿 العطور الحالية (<span id="countBadge">0</span>)</h2>
-      <button type="button" class="btn-save" style="margin:0 0 12px;width:auto;padding:8px 16px" onclick="shrinkAllImages()">📦 نقل الصور للتخزين</button>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px">
+        <button type="button" class="btn-save" style="margin:0;width:auto;padding:8px 16px" onclick="exportPerfumes()">⬇️ تحميل آخر نسخة</button>
+        <button type="button" class="btn-save" style="margin:0;width:auto;padding:8px 16px" onclick="document.getElementById('impFile').click()">📥 إضافة عطور من ملف</button>
+        <button type="button" class="btn-save" style="margin:0;width:auto;padding:8px 16px" onclick="shrinkAllImages()">📦 نقل الصور للتخزين</button>
+        <input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="importPerfumes(this)">
+      </div>
+      <div id="imgTotal" style="margin:0 0 8px;font-size:13px;opacity:.85"></div>
+      <div id="imgWarn" style="display:none;margin:0 0 12px;padding:10px 14px;border:1px solid #d9a441;border-radius:10px;background:rgba(217,164,65,.12);font-size:13px;line-height:1.9"></div>
+      <details id="plogBox" ontoggle="if(this.open)plogLoad().then(plogRender)" style="margin:0 0 12px"><summary style="cursor:pointer">🕘 آخر التحديثات</summary><div id="plogList" style="font-size:13px;line-height:1.9;margin-top:8px">…</div></details>
       <div class="perfume-list" id="perfumeList"></div>
     </div>
 
@@ -930,6 +938,116 @@ function persistPerfumes(arr){
       if(window.console) console.warn('perfumes upsert failed', e);
     });
 }
+// ══ سجل التحديثات (يتحفظ بالسيرفر) ══
+var PLOG_KEY='perfumes_log';
+async function plogLoad(){
+  try{ var r=await OrrisCloud.list('site_config','&key=eq.'+PLOG_KEY); return (r&&r[0]&&Array.isArray(r[0].value))?r[0].value:[]; }
+  catch(e){ return []; }
+}
+function plogRender(l){
+  var el=document.getElementById('plogList'); if(!el) return;
+  if(!l||!l.length){ el.textContent='ما كو تحديثات مسجلة بعد'; return; }
+  el.innerHTML=l.slice(0,20).map(function(x){
+    var d=new Date(x.t), ts=isNaN(d)?'':d.toLocaleString('ar-IQ',{dateStyle:'short',timeStyle:'short'});
+    return '<div>• <span style="opacity:.6">'+esc(ts)+'</span> — '+esc(x.m)+'</div>';
+  }).join('');
+}
+async function plog(msg){
+  try{
+    var l=await plogLoad(); l.unshift({t:new Date().toISOString(),m:String(msg).slice(0,200)}); l=l.slice(0,40);
+    await OrrisCloud.upsert('site_config',[{key:PLOG_KEY,value:l}]);
+    var b=document.getElementById('plogBox'); if(b&&b.open) plogRender(l);
+  }catch(e){}
+}
+// ══ حجم صورة كل عطر ══
+var IMGSZ={}, IMGBUSY=false;
+function fmtKB(b){ return b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB'; }
+function imgBytes(p){
+  var im=p&&p.image||''; if(!im) return 0;
+  if(/^data:/.test(im)){ var c=im.indexOf(','); return Math.round((im.length-c-1)*0.75); }
+  return IMGSZ[im]===undefined?-1:IMGSZ[im];
+}
+function imgSzUpdate(){
+  var arr=getPerfumes(), total=0, pending=0;
+  arr.forEach(function(p,i){
+    var b=imgBytes(p), el=document.getElementById('isz'+i);
+    if(b>0) total+=b; if(b<0) pending++;
+    if(!el) return;
+    el.textContent=!p.image?'بدون صورة':b<0?'…':b===0?'غير معروف':fmtKB(b)+(/^data:/.test(p.image)?' (داخل البيانات)':'');
+    el.style.color=b>=307200?'#e0633a':'';
+  });
+  var t=document.getElementById('imgTotal');
+  if(t) t.textContent='📊 مجموع حجم الصور: '+fmtKB(total)+(pending?' (جاري الحساب…)':'');
+}
+async function imgSzFetch(){
+  if(IMGBUSY) return; IMGBUSY=true;
+  try{
+    var urls=getPerfumes().map(function(p){ return p&&p.image; }).filter(function(u){ return u&&!/^data:/.test(u)&&IMGSZ[u]===undefined; });
+    for(var i=0;i<urls.length;i++){
+      var u=urls[i];
+      try{ var r=await fetch(u); var b=await r.blob(); IMGSZ[u]=r.ok?b.size:0; }catch(e){ IMGSZ[u]=0; }
+      imgSzUpdate();
+    }
+  }finally{ IMGBUSY=false; }
+}
+function imgWarnUpdate(arr){
+  var el=document.getElementById('imgWarn'); if(!el) return;
+  var heavy=arr.filter(function(p){ return /^data:image\//.test(p&&p.image||''); }).length;
+  var none=arr.filter(function(p){ return !(p&&p.image); }).length, h=[];
+  if(heavy) h.push('⚠️ '+heavy+' عطر صورته مخزنة داخل البيانات (مو بالتخزين) — اضغط «📦 نقل الصور للتخزين»');
+  if(none) h.push('🖼️ '+none+' عطر بدون صورة');
+  el.innerHTML=h.map(function(x){ return '<div>'+x+'</div>'; }).join(''); el.style.display=h.length?'block':'none';
+}
+// ══ تحميل آخر نسخة / إضافة من ملف ══
+async function exportPerfumes(){
+  var arr=null;
+  try{ var rows=await OrrisCloud.list('perfumes','&order=updated_at.desc'); if(rows.length&&Array.isArray(rows[0].data)) arr=rows[0].data; }catch(e){}
+  if(!arr) arr=getPerfumes();
+  if(!arr.length){ showToast('لا توجد عطور للتحميل'); return; }
+  var pack={app:'ORRIS',kind:'perfumes',exportedAt:new Date().toISOString(),count:arr.length,perfumes:arr};
+  var d=new Date(), z=function(n){ return ('0'+n).slice(-2); };
+  var stamp=d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'_'+z(d.getHours())+z(d.getMinutes());
+  var blob=new Blob([JSON.stringify(pack,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob), l=document.createElement('a');
+  l.href=url; l.download='orris-perfumes-'+stamp+'.json'; document.body.appendChild(l); l.click(); l.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); },3000);
+  showToast('✅ نزلت آخر نسخة ('+arr.length+' عطر)');
+  plog('تحميل نسخة ('+arr.length+' عطر)');
+}
+function nzName(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+async function importPerfumes(input){
+  var f=input.files&&input.files[0]; input.value=''; if(!f) return;
+  var data; try{ data=JSON.parse(await f.text()); }catch(e){ alert('❌ الملف مو صالح (لازم يكون ملف عطور نازل من نفس اللوحة)'); return; }
+  var inc=Array.isArray(data)?data:(data&&Array.isArray(data.perfumes)?data.perfumes:null);
+  if(!inc){ alert('❌ الملف ما فيه قائمة عطور'); return; }
+  inc=inc.filter(function(p){ return p&&typeof p==='object'&&String(p.name||'').trim(); });
+  if(!inc.length){ alert('❌ ما لقيت عطور صالحة بالملف'); return; }
+  var cur=getPerfumes().slice(), idx={};
+  cur.forEach(function(p,i){ idx[nzName(p.name)]=i; });
+  var dups=inc.filter(function(p){ return idx[nzName(p.name)]!==undefined; }).length, replace=false;
+  if(dups) replace=confirm('الملف فيه '+inc.length+' عطر، منهم '+dups+' موجودين بنفس الاسم.\n\nموافق = استبدال الموجودين بالجديد\nإلغاء = تخطيهم وإضافة الجديد فقط');
+  showToast('⏳ جاري الاستيراد…');
+  var added=0, replaced=0, skipped=0, noType=0, imgFail=[];
+  for(var n=0;n<inc.length;n++){
+    var q=Object.assign({},inc[n]); q.name=String(q.name).trim();
+    if(!Array.isArray(q.types)||!q.types.length) q.types=typesOfPerfume(q);
+    if(!q.type&&q.types.length) q.type=q.types[0];
+    if(!q.types.length) noType++;
+    if(/^data:image\//.test(q.image||'')){
+      try{ var sm=await new Promise(function(res){ shrinkImg(q.image,res); }); q.image=await uploadPerfumeImg(sm); }
+      catch(e){ imgFail.push(q.name); }
+    }
+    var k=nzName(q.name);
+    if(idx[k]!==undefined){ if(replace){ cur[idx[k]]=q; replaced++; } else skipped++; }
+    else{ idx[k]=cur.length; cur.push(q); added++; }
+  }
+  await persistPerfumes(cur); renderList(); updateStorageBar();
+  var msg='✅ أضفت '+added+(replaced?'، استبدلت '+replaced:'')+(skipped?'، تخطيت '+skipped+' مكرر':'');
+  plog('استيراد من ملف: أضفت '+added+'، استبدلت '+replaced+'، تخطيت '+skipped);
+  if(imgFail.length||noType){
+    alert(msg+(imgFail.length?'\n\n⚠️ ما انرفعت صور هالعطور (بقت داخل البيانات):\n'+imgFail.slice(0,15).join('، '):'')+(noType?'\n\n⚠️ '+noType+' عطر بدون قسم (رجالي/نسائي/اقتصادي) وما راح يطلع بالأقسام حتى تعدله.':''));
+  }else showToast(msg);
+}
 async function uploadPerfumeImg(dataUrl){
   var m=/^data:(image\/[a-z+]+);base64,(.*)$/i.exec(dataUrl);
   if(!m) throw new Error('صيغة الصورة غير صالحة');
@@ -967,13 +1085,14 @@ async function shrinkAllImages(){
     if(im && /^data:image\//.test(im)){
       var small=await new Promise(function(res){ shrinkImg(im,res); });
       try{ arr[i]=Object.assign({},arr[i],{image:await uploadPerfumeImg(small)}); moved++; }
-      catch(e){ showToast('❌ توقف النقل عند «'+(arr[i].name||i)+'»: '+String(e&&e.message||e).slice(0,70)); fail=true; break; }
+      catch(e){ var em=String(e&&e.message||e).slice(0,160); alert('⚠️ توقف نقل الصور عند «'+(arr[i].name||i)+'»\n\nالسبب: '+em+'\n\nتأكد إنك شغلت orris-storage.sql.'); plog('توقف نقل الصور عند «'+(arr[i].name||i)+'»: '+em); fail=true; break; }
     }
   }
   var after=JSON.stringify(arr).length;
   await persistPerfumes(arr);
   renderList(); updateStorageBar();
   if(!fail) showToast('✅ اننقلت '+moved+' صورة — الحجم '+(before/1048576).toFixed(1)+'MB ← '+(after/1048576).toFixed(1)+'MB');
+  if(moved) plog('نقل '+moved+' صورة للتخزين');
 }
 async function loadPerfumesFromSource(){
   var cloud=null, cloudFailed=false;
@@ -1529,7 +1648,7 @@ async function savePerfume(){
   if(img && img.indexOf('data:')===0){
     showToast('⏳ جاري رفع الصورة…');
     try{ img = await uploadPerfumeImg(img); }
-    catch(e){ showToast('❌ فشل رفع الصورة: '+String(e&&e.message||e).slice(0,70)); return; }
+    catch(e){ var em=String(e&&e.message||e).slice(0,160); alert('⚠️ الصورة ما انرفعت والعطر ما انحفظ.\n\nالسبب: '+em+'\n\nتأكد إنك شغلت ملف orris-storage.sql، وجرب مرة ثانية.'); plog('فشل رفع صورة العطر «'+name+'»: '+em); return; }
   }
   if(!img && keepOldImage && editIndex>=0) img = (getPerfumes()[editIndex]||{}).image||'';
   var p = {
@@ -1545,6 +1664,7 @@ async function savePerfume(){
   if(editIndex>=0){ perfumes[editIndex]=Object.assign({},perfumes[editIndex],p); showToast('✅ تم تعديل العطر'); }
   else { perfumes.push(p); showToast('✅ تمت إضافة العطر'); }
   persistPerfumes(perfumes);
+  plog((editIndex>=0?'تعديل عطر: ':'إضافة عطر: ')+name);
   saveSizeTpl(sizes);
   resetForm(); renderList(); updateStorageBar();
 }
@@ -1572,7 +1692,7 @@ function editPerfume(i){
   card.scrollIntoView({behavior:'smooth',block:'start'});
   setTimeout(function(){ try{ document.getElementById('f_name').focus({preventScroll:true}); }catch(e){} },400);
 }
-function deletePerfume(i){ if(!confirm('حذف العطر؟'))return; var p=getPerfumes(); p.splice(i,1); persistPerfumes(p); renderList(); updateStorageBar(); showToast('🗑️ تم حذف العطر'); }
+function deletePerfume(i){ if(!confirm('حذف العطر؟'))return; var p=getPerfumes(); var _nm=(p[i]||{}).name; p.splice(i,1); persistPerfumes(p); plog('حذف عطر: '+_nm); renderList(); updateStorageBar(); showToast('🗑️ تم حذف العطر'); }
 function resetForm(){
   ['f_name','f_nameEn','f_desc'].forEach(function(id){ document.getElementById(id).value=''; });
   setTypes([]); document.getElementById('f_currency').value='دينار'; document.getElementById('f_badge').value='';
@@ -1584,16 +1704,18 @@ function resetForm(){
 function renderList(){
   var perfumes = getPerfumes();
   document.getElementById('countBadge').textContent = perfumes.length;
+  imgWarnUpdate(perfumes);
   var list = document.getElementById('perfumeList');
   if(!perfumes.length){ list.innerHTML='<div class="no-items">لا توجد عطور بعد 🌿</div>'; return; }
   list.innerHTML = perfumes.map(function(p,i){
     return '<div class="perfume-item">' +
       '<div class="item-thumb">'+(p.image?'<img src="'+esc(p.image)+'" onerror="this.parentElement.innerHTML=\'🌿\'">'+'':'🌿')+'</div>' +
       '<div class="perfume-info"><div class="pname">'+esc(p.name)+(p.nameEn?' — '+esc(p.nameEn):'')+'</div>' +
-      '<div class="pmeta">'+esc(typesOfPerfume(p).join(' + '))+' '+sizesOfPerfume(p).map(function(x){ return '• '+esc(x.size)+(x.price?' '+esc(parseInt(x.price).toLocaleString('en-US')):''); }).join(' ')+' '+esc(p.currency||'')+'</div></div>' +
+      '<div class="pmeta">'+esc(typesOfPerfume(p).join(' + '))+' '+sizesOfPerfume(p).map(function(x){ return '• '+esc(x.size)+(x.price?' '+esc(parseInt(x.price).toLocaleString('en-US')):''); }).join(' ')+' '+esc(p.currency||'')+' <span style="white-space:nowrap">• 🖼️ <span id="isz'+i+'">…</span></span></div></div>' +
       '<div class="item-actions"><button class="btn-edit" onclick="editPerfume('+i+')">✏️ تعديل</button><button class="btn-delete" onclick="deletePerfume('+i+')">🗑️</button></div>' +
     '</div>';
   }).join('');
+  imgSzUpdate(); imgSzFetch();
 }
 (async function(){
   if(OrrisCloud.hasSession()){
